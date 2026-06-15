@@ -11,3 +11,11 @@ export interface createOrganizationParams {
     userId: string;
     input: createOrganizationInput;
 }
+
+export interface getOrganizationByUserIdParams {
+    db: DbClient;
+    userId: string;
+    cursor?: string;
+    limit?: number;
+    search?: string;
+}

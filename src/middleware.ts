@@ -16,5 +16,5 @@ export default auth((req) => {
  * to sign-in. Add new protected route prefixes here as the app grows.
  */
 export const config = {
-  matcher: ["/organization/:path*"],
+  matcher: ["/organization", "/organization/:path*"],
 };

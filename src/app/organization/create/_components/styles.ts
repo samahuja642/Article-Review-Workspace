@@ -4,7 +4,7 @@ export const styles = {
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: 2,
+    gap: 2.5,
   } satisfies SxProps<Theme>,
 
   submitButton: {

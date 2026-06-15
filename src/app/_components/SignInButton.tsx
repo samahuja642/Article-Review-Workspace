@@ -8,7 +8,7 @@ export function SignInButton() {
     <Button
       intent="primary"
       size="large"
-      onClick={() => signIn("discord", { callbackUrl: "/organization/create" })}
+      onClick={() => signIn("discord", { callbackUrl: "/organization" })}
       sx={{ px: 4, py: 1.25, fontSize: "1rem" }}
     >
       Get Started

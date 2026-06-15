@@ -32,7 +32,7 @@ export default async function HomePage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/organization/create");
+    redirect("/organization");
   }
 
   return (

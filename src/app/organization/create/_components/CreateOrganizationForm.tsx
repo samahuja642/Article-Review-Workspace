@@ -28,7 +28,7 @@ export function CreateOrganizationForm() {
   });
 
   const createOrganization = api.organization.create.useMutation({
-    onSuccess: () => router.push("/"),
+    onSuccess: () => router.push("/organization"),
     onError: (err) => setError("name", { message: err.message }),
   });
 

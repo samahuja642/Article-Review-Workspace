@@ -1,29 +1,67 @@
+import Link from "next/link";
 import Box from "@mui/material/Box";
-import { Card, CardHeader, CardContent } from "~/app/_components/widgets/Card";
-import { Heading2, BodyText } from "~/app/_components/widgets/Typography";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { CreateOrganizationForm } from "./_components/CreateOrganizationForm";
-import { styles } from "./styles";
+import { styles, perkColors } from "./styles";
 
-export const metadata = {
-  title: "Create Organization",
-};
+export const metadata = { title: "Create Organization" };
+
+const perks = [
+  {
+    icon: <LayersOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.blue }} />,
+    text: "Organize research into scoped projects with their own article sets.",
+  },
+  {
+    icon: <GroupOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.green }} />,
+    text: "Invite team members and collaborate across the review pipeline.",
+  },
+  {
+    icon: <AdminPanelSettingsOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.mauve }} />,
+    text: "Role-based access — owners control membership and permissions.",
+  },
+];
 
 export default function CreateOrganizationPage() {
   return (
     <Box sx={styles.page}>
-      <Card sx={styles.card}>
-        <CardHeader>
-          <Box sx={styles.headerContent}>
-            <Heading2>Create Organization</Heading2>
-            <BodyText>
-              Set up a new organization to manage your projects and team.
-            </BodyText>
+      <Box sx={styles.left}>
+        <Box component={Link} href="/organization" sx={styles.backLink}>
+          <ArrowBackIcon sx={{ fontSize: "0.85rem" }} />
+          Organizations
+        </Box>
+
+        <Box>
+          <Box sx={styles.eyebrow}>New workspace</Box>
+          <Box component="h1" sx={styles.heading}>
+            Set up your
+            <Box component="span" sx={styles.headingAccent}>organization.</Box>
           </Box>
-        </CardHeader>
-        <CardContent>
+        </Box>
+
+        <Box component="p" sx={styles.description}>
+          An organization is the top-level workspace for your team.
+          Projects and articles live inside it.
+        </Box>
+
+        <Box sx={styles.perks}>
+          {perks.map((p, i) => (
+            <Box key={i} sx={styles.perkRow}>
+              <Box sx={styles.perkIcon}>{p.icon}</Box>
+              <Box sx={styles.perkText}>{p.text}</Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      <Box sx={styles.right}>
+        <Box sx={styles.formPanel}>
+          <Box sx={styles.formLabel}>Organization details</Box>
           <CreateOrganizationForm />
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
     </Box>
   );
 }

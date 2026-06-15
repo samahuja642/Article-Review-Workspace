@@ -3,8 +3,8 @@ import {
     protectedProcedure,
     publicProcedure,
 } from "~/server/api/trpc";
-import { createOrganizationSchema } from "../validations/organization";
-import { createOrganization } from "../services/organization";
+import { createOrganizationSchema, getAllOrganizationSchema } from "../validations/organization";
+import { createOrganization, getAllOrganizationsByUserId } from "../services/organization";
 
 export const organizationRouter = createTRPCRouter({
     create: protectedProcedure
@@ -15,6 +15,16 @@ export const organizationRouter = createTRPCRouter({
                 userId: ctx.session.user.id,
                 input
             });
+        }),
+    getAll: protectedProcedure
+        .input(getAllOrganizationSchema)
+        .query(async ({ctx,input}) => {
+            return getAllOrganizationsByUserId({
+                db: ctx.db,
+                userId: ctx.session.user.id,
+                cursor: input.cursor,
+                limit: input.limit,
+                search: input.search,
+            });
         })
-        
 })

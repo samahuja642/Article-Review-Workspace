@@ -2,16 +2,7 @@
 
 import MuiTextField, { type TextFieldProps } from "@mui/material/TextField";
 import { styled } from "@mui/material/styles";
-
-const frappe = {
-  base: "#303446",
-  surface1: "#51576d",
-  text: "#c6d0f5",
-  subtext1: "#b5bfe2",
-  overlay1: "#838ba7",
-  blue: "#8caaee",
-  red: "#e78284",
-};
+import { frappe } from "~/theme/colors";
 
 const StyledTextField = styled(MuiTextField)({
   "& .MuiOutlinedInput-root": {

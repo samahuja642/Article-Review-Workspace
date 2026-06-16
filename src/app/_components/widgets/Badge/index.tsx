@@ -2,15 +2,7 @@
 
 import MuiChip, { type ChipProps as MuiChipProps } from "@mui/material/Chip";
 import { styled } from "@mui/material/styles";
-
-const frappe = {
-  surface1: "#51576d",
-  text: "#c6d0f5",
-  green: "#a6d189",
-  red: "#e78284",
-  peach: "#ef9f76",
-  sky: "#99d1db",
-};
+import { frappe } from "~/theme/colors";
 
 const statusStyles = {
   default: {

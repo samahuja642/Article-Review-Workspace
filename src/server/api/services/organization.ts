@@ -1,4 +1,5 @@
-import type { createOrganizationParams, getOrganizationByUserIdParams } from "../types/organization";
+import { TRPCError } from "@trpc/server";
+import type { createOrganizationParams, getOrganizationByUserIdParams, getOrganizationByIdParams, addOrganizationMemberParams } from "../types/organization";
 
 export async function createOrganization({ db, userId, input }: createOrganizationParams) {
     return db.organization.create({
@@ -57,4 +58,42 @@ export async function getAllOrganizationsByUserId({
     }));
 
     return { items, nextCursor };
+}
+
+export async function getOrganizationById({ db, userId, id }: getOrganizationByIdParams) {
+    const org = await db.organization.findFirst({
+        where: { id, members: { some: { userId } } },
+        include: {
+            members: {
+                where: { userId },
+                select: { role: true },
+            },
+            _count: { select: { members: true, projects: true } },
+        },
+    });
+
+    if (!org) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found." });
+    }
+
+    return {
+        id: org.id,
+        name: org.name,
+        createdAt: org.createdAt,
+        role: org.members[0]?.role ?? "MEMBER",
+        memberCount: org._count.members,
+        projectCount: org._count.projects,
+    };
+}
+
+export async function addOrganizationMember({ db, requesterId, organizationId, userId }: addOrganizationMemberParams) {
+    const requester = await db.organizationMember.findFirst({
+        where: { userId: requesterId, organizationId, role: "OWNER" },
+    });
+    if (!requester) throw new TRPCError({ code: "FORBIDDEN", message: "Only owners can add members." });
+
+    const existing = await db.organizationMember.findFirst({ where: { userId, organizationId } });
+    if (existing) throw new TRPCError({ code: "CONFLICT", message: "User is already a member." });
+
+    return db.organizationMember.create({ data: { userId, organizationId, role: "MEMBER" } });
 }

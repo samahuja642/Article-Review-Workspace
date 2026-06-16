@@ -1,24 +1,5 @@
 import type { SxProps, Theme } from "@mui/material/styles";
-
-const frappe = {
-  base: "#303446",
-  surface0: "#414559",
-  surface1: "#51576d",
-  text: "#c6d0f5",
-  subtext1: "#b5bfe2",
-  subtext0: "#a5adce",
-  overlay1: "#838ba7",
-  overlay0: "#737994",
-  blue: "#8caaee",
-  mauve: "#ca9ee6",
-  lavender: "#babbf1",
-  green: "#a6d189",
-  peach: "#ef9f76",
-  red: "#e78284",
-  sky: "#99d1db",
-  crust: "#232634",
-  mantle: "#292c3c",
-};
+import { frappe } from "~/theme/colors";
 
 export const styles = {
   root: {

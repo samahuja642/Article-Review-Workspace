@@ -21,10 +21,17 @@ export const styles = {
     flexWrap: "wrap" as const,
   } satisfies SxProps<Theme>,
 
-  pageHeaderLeft: {
+  breadcrumb: {
     display: "flex",
-    flexDirection: "column",
-    gap: 0.5,
+    alignItems: "center",
+    gap: 0.75,
+    fontSize: "0.75rem",
+    color: frappe.overlay1,
+    mb: 1,
+    cursor: "pointer",
+    width: "fit-content",
+    textDecoration: "none",
+    "&:hover": { color: frappe.subtext1 },
   } satisfies SxProps<Theme>,
 
   pageEyebrow: {
@@ -41,6 +48,22 @@ export const styles = {
     letterSpacing: "-0.02em",
     color: frappe.text,
     lineHeight: 1.15,
+  } satisfies SxProps<Theme>,
+
+  metaRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 2,
+    mt: 0.75,
+    flexWrap: "wrap" as const,
+  } satisfies SxProps<Theme>,
+
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 0.5,
+    fontSize: "0.775rem",
+    color: frappe.overlay1,
   } satisfies SxProps<Theme>,
 
   toolbar: {
@@ -70,7 +93,7 @@ export const styles = {
     overflow: "hidden",
   } satisfies SxProps<Theme>,
 
-  card: {
+  row: {
     px: 3,
     py: 2,
     display: "flex",
@@ -80,12 +103,10 @@ export const styles = {
     borderBottom: `1px solid ${frappe.surface0}`,
     transition: "background-color 0.12s ease",
     "&:last-child": { borderBottom: "none" },
-    "&:hover": {
-      backgroundColor: `${frappe.surface0}55`,
-    },
+    "&:hover": { backgroundColor: `${frappe.surface0}55` },
   } satisfies SxProps<Theme>,
 
-  cardInitial: {
+  rowInitial: {
     width: 34,
     height: 34,
     flexShrink: 0,
@@ -93,13 +114,13 @@ export const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "0.9rem",
+    fontSize: "0.875rem",
     fontWeight: 700,
-    color: frappe.lavender,
+    color: frappe.blue,
     letterSpacing: "-0.01em",
   } satisfies SxProps<Theme>,
 
-  cardMain: {
+  rowMain: {
     flex: 1,
     minWidth: 0,
     display: "flex",
@@ -107,25 +128,25 @@ export const styles = {
     gap: 2,
   } satisfies SxProps<Theme>,
 
-  cardName: {
+  rowName: {
     fontSize: "0.875rem",
     fontWeight: 600,
     color: frappe.text,
     whiteSpace: "nowrap" as const,
     overflow: "hidden",
     textOverflow: "ellipsis",
-    minWidth: 0,
     flex: 1,
+    minWidth: 0,
   } satisfies SxProps<Theme>,
 
-  cardRight: {
+  rowRight: {
     display: "flex",
     alignItems: "center",
     gap: 3,
     flexShrink: 0,
   } satisfies SxProps<Theme>,
 
-  metaStat: {
+  rowStat: {
     display: "flex",
     alignItems: "center",
     gap: 0.6,
@@ -134,7 +155,7 @@ export const styles = {
     whiteSpace: "nowrap" as const,
   } satisfies SxProps<Theme>,
 
-  metaDate: {
+  rowDate: {
     fontSize: "0.72rem",
     color: frappe.overlay0,
     minWidth: 64,
@@ -159,22 +180,9 @@ export const styles = {
     textAlign: "center",
   } satisfies SxProps<Theme>,
 
-  emptyIcon: {
-    color: frappe.surface1,
-    fontSize: "2.5rem",
-    mb: 0.5,
-  } satisfies SxProps<Theme>,
-
-  emptyTitle: {
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    color: frappe.subtext1,
-  } satisfies SxProps<Theme>,
-
-  emptyDesc: {
-    fontSize: "0.82rem",
-    color: frappe.overlay0,
-  } satisfies SxProps<Theme>,
+  emptyIcon: { color: frappe.surface1, fontSize: "2.5rem", mb: 0.5 } satisfies SxProps<Theme>,
+  emptyTitle: { fontSize: "0.95rem", fontWeight: 600, color: frappe.subtext1 } satisfies SxProps<Theme>,
+  emptyDesc: { fontSize: "0.82rem", color: frappe.overlay0 } satisfies SxProps<Theme>,
 
   skeletonList: {
     border: `1px solid ${frappe.surface0}`,

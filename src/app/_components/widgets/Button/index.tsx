@@ -2,21 +2,7 @@
 
 import MuiButton, { type ButtonProps as MuiButtonProps } from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
-
-const frappe = {
-  blue: "#8caaee",
-  lavender: "#babbf1",
-  sapphire: "#85c1dc",
-  mauve: "#ca9ee6",
-  pink: "#f4b8e4",
-  red: "#e78284",
-  maroon: "#ea999c",
-  surface0: "#414559",
-  surface1: "#51576d",
-  text: "#c6d0f5",
-  subtext1: "#b5bfe2",
-  crust: "#232634",
-};
+import { frappe } from "~/theme/colors";
 
 const intentStyles = {
   primary: {

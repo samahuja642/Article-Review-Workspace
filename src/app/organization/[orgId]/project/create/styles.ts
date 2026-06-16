@@ -82,7 +82,6 @@ export const styles = {
   perkIcon: {
     width: 30,
     height: 30,
-    borderRadius: "6px",
     backgroundColor: frappe.surface0,
     display: "flex",
     alignItems: "center",
@@ -103,7 +102,6 @@ export const styles = {
   formPanel: {
     backgroundColor: frappe.mantle,
     border: `1px solid ${frappe.surface0}`,
-    borderRadius: "12px",
     p: { xs: 3, md: 4 },
     display: "flex",
     flexDirection: "column",
@@ -119,21 +117,10 @@ export const styles = {
     pb: 1.5,
     borderBottom: `1px solid ${frappe.surface0}`,
   } satisfies SxProps<Theme>,
-
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2.5,
-  } satisfies SxProps<Theme>,
-
-  submitButton: {
-    alignSelf: "flex-end",
-    minWidth: 160,
-  } satisfies SxProps<Theme>,
 };
 
-export const perkColors: Record<string, string> = {
+export const perkColors = {
   blue: frappe.blue,
   green: frappe.green,
-  mauve: frappe.mauve,
+  sky: frappe.sky,
 };

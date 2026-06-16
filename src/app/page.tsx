@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Box from "@mui/material/Box";
+import { frappe } from "~/theme/colors";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
@@ -96,7 +97,7 @@ export default async function HomePage() {
                     {s}
                   </Box>
                   {i < statuses.length - 1 && (
-                    <ArrowForwardIcon sx={{ fontSize: "0.75rem", color: "#737994" }} />
+                    <ArrowForwardIcon sx={{ fontSize: "0.75rem", color: frappe.overlay0 }} />
                   )}
                 </Box>
               ))}

@@ -19,3 +19,16 @@ export interface getOrganizationByUserIdParams {
     limit?: number;
     search?: string;
 }
+
+export interface getOrganizationByIdParams {
+    db: DbClient;
+    userId: string;
+    id: string;
+}
+
+export interface addOrganizationMemberParams {
+    db: DbClient;
+    requesterId: string;
+    organizationId: string;
+    userId: string;
+}

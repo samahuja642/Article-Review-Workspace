@@ -5,13 +5,7 @@ import MuiCardContent from "@mui/material/CardContent";
 import MuiCardActions from "@mui/material/CardActions";
 import { styled } from "@mui/material/styles";
 import Box, { type BoxProps } from "@mui/material/Box";
-
-const frappe = {
-  mantle: "#292c3c",
-  surface0: "#414559",
-  surface1: "#51576d",
-  text: "#c6d0f5",
-};
+import { frappe } from "~/theme/colors";
 
 const Card = styled(MuiCard)({
   backgroundColor: frappe.mantle,

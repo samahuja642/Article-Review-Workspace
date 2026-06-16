@@ -2,14 +2,7 @@
 
 import MuiTypography, { type TypographyProps } from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
-
-const frappe = {
-  text: "#c6d0f5",
-  subtext1: "#b5bfe2",
-  subtext0: "#a5adce",
-  overlay1: "#838ba7",
-  lavender: "#babbf1",
-};
+import { frappe } from "~/theme/colors";
 
 const StyledH1 = styled(MuiTypography)({
   color: frappe.text,

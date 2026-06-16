@@ -14,6 +14,7 @@ import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
 import { styles, roleBadge } from "../styles";
 import { useDebounce } from "~/app/_hooks/useDebounce";
+import { frappe } from "~/theme/colors";
 
 const LIMIT = 20;
 
@@ -78,7 +79,7 @@ export function OrganizationList() {
           />
         </Box>
         {!isLoading && (
-          <Box sx={{ fontSize: "0.78rem", color: "#737994" }}>
+          <Box sx={{ fontSize: "0.78rem", color: frappe.overlay0 }}>
             {organizations.length} {organizations.length === 1 ? "result" : "results"}
           </Box>
         )}
@@ -168,7 +169,7 @@ export function OrganizationList() {
 
         <Box ref={sentinelRef} sx={styles.sentinel}>
           {isFetchingNextPage && (
-            <CircularProgress size={18} sx={{ color: "#8caaee" }} />
+            <CircularProgress size={18} sx={{ color: frappe.blue }} />
           )}
         </Box>
       </Box>

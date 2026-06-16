@@ -2,15 +2,7 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import { auth } from "~/server/auth";
 import { SignOutButton } from "./SignOutButton";
-
-const frappe = {
-  crust: "#232634",
-  surface0: "#414559",
-  surface1: "#51576d",
-  text: "#c6d0f5",
-  subtext1: "#b5bfe2",
-  blue: "#8caaee",
-};
+import { frappe } from "~/theme/colors";
 
 export async function Header() {
   const session = await auth();

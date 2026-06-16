@@ -1,4 +1,7 @@
 export { default as Button } from "./Button";
+
+export { Dialog, DialogHeader, DialogBody } from "./Dialog";
+export type { DialogProps } from "./Dialog";
 export type { ButtonProps } from "./Button";
 
 export { Card, CardHeader, CardContent, CardFooter } from "./Card";

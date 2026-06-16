@@ -1,4 +1,5 @@
 import DiscordProvider from "next-auth/providers/discord";
+import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthConfig } from "next-auth";
 
 /**
@@ -7,7 +8,10 @@ import type { NextAuthConfig } from "next-auth";
  * The full config (with PrismaAdapter) lives in config.ts.
  */
 export const edgeAuthConfig = {
-  providers: [DiscordProvider],
+  providers: [
+    DiscordProvider({ allowDangerousEmailAccountLinking: true }),
+    GoogleProvider({ allowDangerousEmailAccountLinking: true }),
+  ],
   callbacks: {
     authorized({ auth }) {
       return !!auth?.user;

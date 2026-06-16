@@ -59,7 +59,6 @@ export default async function HomePage() {
 
           <Box sx={styles.cta}>
             <SignInButton />
-            <Box sx={styles.ctaHint}>Continue with Discord</Box>
           </Box>
         </Box>
 

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import type { createProjectParams, getProjectsByOrgParams, addProjectMemberParams } from "../types/project";
+import type { createProjectParams, getProjectsByOrgParams, addProjectMemberParams, getAllProjectsByUserAndOrganizationParams } from "../types/project";
 
 export async function createProject({ db, userId, input }: createProjectParams) {
     const membership = await db.organizationMember.findFirst({
@@ -29,17 +29,10 @@ export async function getProjectsByOrganization({
     limit = 20,
     search,
 }: getProjectsByOrgParams) {
-    const membership = await db.organizationMember.findFirst({
-        where: { userId, organizationId },
-    });
-
-    if (!membership) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization." });
-    }
-
     const rows = await db.project.findMany({
         where: {
             organizationId,
+            members: { some: { userId } },
             ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
         },
         orderBy: { name: "asc" },
@@ -67,6 +60,56 @@ export async function getProjectsByOrganization({
         id: p.id,
         name: p.name,
         createdAt: p.createdAt,
+        role: p.members[0]?.role,
+        memberCount: p._count.members,
+        articleCount: p._count.articles,
+    }));
+
+    return { items, nextCursor };
+}
+
+export async function getAllProjectsByUserAndOrganizationId({
+    db,
+    userId,
+    organizationId,
+    cursor,
+    limit = 20,
+    search,
+}: getAllProjectsByUserAndOrganizationParams) {
+    const rows = await db.project.findMany({
+        where: {
+            members: { some: { userId } },
+            ...(organizationId ? { organizationId } : {}),
+            ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+        },
+        orderBy: { name: "asc" },
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+        include: {
+            organization: { select: { id: true, name: true } },
+            members: {
+                where: { userId },
+                select: { role: true },
+            },
+            _count: {
+                select: { members: true, articles: true },
+            },
+        },
+    });
+
+    let nextCursor: string | undefined = undefined;
+    if (rows.length > limit) {
+        const next = rows.pop();
+        nextCursor = next!.id;
+    }
+
+    const items = rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        createdAt: p.createdAt,
+        organizationId: p.organization.id,
+        organizationName: p.organization.name,
         role: p.members[0]?.role ?? "MEMBER",
         memberCount: p._count.members,
         articleCount: p._count.articles,

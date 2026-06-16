@@ -22,6 +22,15 @@ export interface getProjectsByOrgParams {
     search?: string;
 }
 
+export interface getAllProjectsByUserAndOrganizationParams {
+    db: DbClient;
+    userId: string;
+    organizationId?: string;
+    cursor?: string;
+    limit?: number;
+    search?: string;
+}
+
 export interface addProjectMemberParams {
     db: DbClient;
     requesterId: string;

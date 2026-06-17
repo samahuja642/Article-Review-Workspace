@@ -1,0 +1,184 @@
+import { TRPCError } from "@trpc/server";
+import type {
+    getArticlesByProjectParams,
+    createArticleParams,
+    updateArticleStatusParams,
+    deleteArticleParams,
+    importArticlesParams,
+    checkConflictsParams,
+    updateArticleFieldsParams,
+} from "../types/article";
+
+async function assertProjectMember(db: getArticlesByProjectParams["db"], userId: string, projectId: string) {
+    const member = await db.projectMember.findFirst({ where: { userId, projectId } });
+    if (!member) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this project." });
+    return member;
+}
+
+function rowToData(row: importArticlesParams["rows"][number], projectId: string) {
+    return {
+        projectId,
+        title: row.title,
+        pmid: row.pmid ?? null,
+        authors: row.authors ?? null,
+        citation: row.citation ?? null,
+        firstAuthor: row.firstAuthor ?? null,
+        journal: row.journal ?? null,
+        publicationYear: row.publicationYear ?? null,
+        createDate: row.createDate ? new Date(row.createDate) : null,
+        pmcid: row.pmcid ?? null,
+        nihmsId: row.nihmsId ?? null,
+        doi: row.doi ?? null,
+    };
+}
+
+export async function getArticlesByProject({
+    db,
+    userId,
+    projectId,
+    cursor,
+    limit = 20,
+    search,
+    reviewStatus,
+}: getArticlesByProjectParams) {
+    await assertProjectMember(db, userId, projectId);
+
+    const rows = await db.article.findMany({
+        where: {
+            projectId,
+            ...(reviewStatus ? { reviewStatus } : {}),
+            ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+    });
+
+    let nextCursor: string | undefined = undefined;
+    if (rows.length > limit) {
+        const next = rows.pop();
+        nextCursor = next!.id;
+    }
+
+    return { items: rows, nextCursor };
+}
+
+export async function createArticle({ db, userId, input }: createArticleParams) {
+    await assertProjectMember(db, userId, input.projectId);
+
+    return db.article.create({
+        data: {
+            projectId: input.projectId,
+            title: input.title,
+            pmid: input.pmid ?? null,
+            authors: input.authors ?? null,
+            journal: input.journal ?? null,
+            publicationYear: input.publicationYear ?? null,
+            doi: input.doi ?? null,
+            pmcid: input.pmcid ?? null,
+        },
+    });
+}
+
+export async function updateArticleStatus({ db, userId, articleId, reviewStatus }: updateArticleStatusParams) {
+    const article = await db.article.findUnique({ where: { id: articleId } });
+    if (!article) throw new TRPCError({ code: "NOT_FOUND" });
+
+    await assertProjectMember(db, userId, article.projectId);
+
+    return db.article.update({ where: { id: articleId }, data: { reviewStatus } });
+}
+
+export async function deleteArticle({ db, userId, articleId }: deleteArticleParams) {
+    const article = await db.article.findUnique({ where: { id: articleId } });
+    if (!article) throw new TRPCError({ code: "NOT_FOUND" });
+
+    await assertProjectMember(db, userId, article.projectId);
+
+    return db.article.delete({ where: { id: articleId } });
+}
+
+export async function checkConflicts({ db, userId, projectId, pmids }: checkConflictsParams) {
+    await assertProjectMember(db, userId, projectId);
+
+    const existing = await db.article.findMany({
+        where: { projectId, pmid: { in: pmids } },
+        select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true },
+    });
+
+    return existing;
+}
+
+export async function updateArticleFields({ db, userId, articleId, data }: updateArticleFieldsParams) {
+    const article = await db.article.findUnique({ where: { id: articleId } });
+    if (!article) throw new TRPCError({ code: "NOT_FOUND" });
+
+    await assertProjectMember(db, userId, article.projectId);
+
+    return db.article.update({
+        where: { id: articleId },
+        data: {
+            title: data.title,
+            pmid: data.pmid ?? null,
+            authors: data.authors ?? null,
+            citation: data.citation ?? null,
+            firstAuthor: data.firstAuthor ?? null,
+            journal: data.journal ?? null,
+            publicationYear: data.publicationYear ?? null,
+            createDate: data.createDate ? new Date(data.createDate) : null,
+            pmcid: data.pmcid ?? null,
+            nihmsId: data.nihmsId ?? null,
+            doi: data.doi ?? null,
+        },
+    });
+}
+
+export async function importArticles({ db, userId, projectId, rows, overwrites }: importArticlesParams) {
+    await assertProjectMember(db, userId, projectId);
+
+    // Second-pass: conflict resolutions provided — apply overwrites and create keep_both rows
+    if (overwrites !== undefined) {
+        await Promise.all(
+            overwrites.map((o) =>
+                db.article.update({ where: { id: o.articleId }, data: rowToData(o.data, projectId) }),
+            ),
+        );
+        let created = 0;
+        if (rows.length > 0) {
+            const result = await db.article.createMany({ data: rows.map((r) => rowToData(r, projectId)) });
+            created = result.count;
+        }
+        return { created, updated: overwrites.length, conflicts: [] as { incomingRow: importArticlesParams["rows"][number]; existing: { id: string; pmid: string | null; title: string; authors: string | null; journal: string | null; publicationYear: number | null; } }[], blankPmidRows: [] as importArticlesParams["rows"] };
+    }
+
+    // First-pass: detect conflicts, import non-conflicting rows immediately
+    const withPmid = rows.filter((r) => !!r.pmid);
+    const noPmid = rows.filter((r) => !r.pmid);
+    const pmids = withPmid.map((r) => r.pmid!);
+
+    const existingByPmid = pmids.length > 0
+        ? await db.article.findMany({
+            where: { projectId, pmid: { in: pmids } },
+            select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true },
+        })
+        : [];
+
+    const existingPmidSet = new Set(existingByPmid.map((e) => e.pmid));
+    const nonConflicting = withPmid.filter((r) => !existingPmidSet.has(r.pmid!));
+    const conflicting = withPmid.filter((r) => existingPmidSet.has(r.pmid!));
+
+    let created = 0;
+    if (nonConflicting.length > 0) {
+        const result = await db.article.createMany({ data: nonConflicting.map((r) => rowToData(r, projectId)) });
+        created = result.count;
+    }
+
+    const conflicts = conflicting.map((incomingRow) => ({
+        incomingRow,
+        existing: existingByPmid.find((e) => e.pmid === incomingRow.pmid)!,
+    }));
+
+    // Return blank-PMID rows separately so the frontend can let the user review/edit them
+    return { created, updated: 0, conflicts, blankPmidRows: noPmid };
+}

@@ -198,9 +198,9 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
                       fontWeight: 600,
                       letterSpacing: "0.05em",
                       flexShrink: 0,
-                      backgroundColor: roleBadge[project.role]?.bg,
-                      color: roleBadge[project.role]?.color,
-                      border: `1px solid ${roleBadge[project.role]?.border}`,
+                      backgroundColor: roleBadge[project.role ?? "MEMBER"]?.bg,
+                      color: roleBadge[project.role ?? "MEMBER"]?.color,
+                      border: `1px solid ${roleBadge[project.role ?? "MEMBER"]?.border}`,
                     }}
                   >
                     {project.role}

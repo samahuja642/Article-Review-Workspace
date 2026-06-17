@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import type { createProjectParams, getProjectsByOrgParams, addProjectMemberParams, getAllProjectsByUserAndOrganizationParams } from "../types/project";
+import type { createProjectParams, getProjectsByOrgParams, addProjectMemberParams, getAllProjectsByUserAndOrganizationParams, getProjectByIdParams } from "../types/project";
 
 export async function createProject({ db, userId, input }: createProjectParams) {
     const membership = await db.organizationMember.findFirst({
@@ -116,6 +116,33 @@ export async function getAllProjectsByUserAndOrganizationId({
     }));
 
     return { items, nextCursor };
+}
+
+export async function getProjectById({ db, userId, projectId }: getProjectByIdParams) {
+    const project = await db.project.findFirst({
+        where: { id: projectId, members: { some: { userId } } },
+        include: {
+            organization: { select: { id: true, name: true } },
+            members: {
+                where: { userId },
+                select: { role: true },
+            },
+            _count: { select: { members: true, articles: true } },
+        },
+    });
+
+    if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." });
+
+    return {
+        id: project.id,
+        name: project.name,
+        createdAt: project.createdAt,
+        organizationId: project.organization.id,
+        organizationName: project.organization.name,
+        role: project.members[0]?.role,
+        memberCount: project._count.members,
+        articleCount: project._count.articles,
+    };
 }
 
 export async function addProjectMember({ db, requesterId, projectId, userId }: addProjectMemberParams) {

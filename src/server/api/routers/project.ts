@@ -1,6 +1,6 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { createProjectSchema, getAllProjectsSchema, addProjectMemberSchema, getAllProjectsByUserAndOrganizationSchema } from "../validations/project";
-import { createProject, getProjectsByOrganization, addProjectMember, getAllProjectsByUserAndOrganizationId } from "../services/project";
+import { createProjectSchema, getAllProjectsSchema, addProjectMemberSchema, getAllProjectsByUserAndOrganizationSchema, getProjectByIdSchema } from "../validations/project";
+import { createProject, getProjectsByOrganization, addProjectMember, getAllProjectsByUserAndOrganizationId, getProjectById } from "../services/project";
 
 export const projectRouter = createTRPCRouter({
     create: protectedProcedure
@@ -33,6 +33,12 @@ export const projectRouter = createTRPCRouter({
                 limit: input.limit,
                 search: input.search,
             }),
+        ),
+
+    getById: protectedProcedure
+        .input(getProjectByIdSchema)
+        .query(({ ctx, input }) =>
+            getProjectById({ db: ctx.db, userId: ctx.session.user.id, projectId: input.projectId }),
         ),
 
     addMember: protectedProcedure

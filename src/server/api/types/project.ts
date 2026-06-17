@@ -37,3 +37,9 @@ export interface addProjectMemberParams {
     projectId: string;
     userId: string;
 }
+
+export interface getProjectByIdParams {
+    db: DbClient;
+    userId: string;
+    projectId: string;
+}

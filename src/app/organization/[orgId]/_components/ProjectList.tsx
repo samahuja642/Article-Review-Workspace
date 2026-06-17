@@ -15,9 +15,8 @@ import { api } from "~/trpc/react";
 import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
 import { AddMemberDialog } from "./AddMemberDialog";
-import { styles, roleBadge } from "../styles";
+import { useStyles } from "../styles";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
 
 const LIMIT = 20;
 
@@ -34,6 +33,7 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const { styles, roleBadge, c } = useStyles();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<"organization" | "project">("organization");
@@ -111,6 +111,7 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
                 backgroundColor: roleBadge[role]?.bg,
                 color: roleBadge[role]?.color,
                 border: `1px solid ${roleBadge[role]?.border}`,
+                borderRadius: "3px",
               }}
             >
               {role}
@@ -143,7 +144,7 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
           />
         </Box>
         {!isLoading && (
-          <Box sx={{ fontSize: "0.78rem", color: frappe.overlay0 }}>
+          <Box sx={{ fontSize: "0.78rem", color: c.overlay0 }}>
             {projects.length} {projects.length === 1 ? "result" : "results"}
           </Box>
         )}
@@ -198,9 +199,10 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
                       fontWeight: 600,
                       letterSpacing: "0.05em",
                       flexShrink: 0,
-                      backgroundColor: roleBadge[project.role]?.bg,
-                      color: roleBadge[project.role]?.color,
-                      border: `1px solid ${roleBadge[project.role]?.border}`,
+                      backgroundColor: roleBadge[project.role ?? "MEMBER"]?.bg,
+                      color: roleBadge[project.role ?? "MEMBER"]?.color,
+                      border: `1px solid ${roleBadge[project.role ?? "MEMBER"]?.border}`,
+                      borderRadius: "3px",
                     }}
                   >
                     {project.role}
@@ -225,7 +227,7 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
                   <IconButton
                     size="small"
                     onClick={(e) => openProjectDialog(e, project.id)}
-                    sx={{ color: frappe.overlay1, "&:hover": { color: frappe.blue }, ml: 0.5 }}
+                    sx={{ color: c.overlay1, "&:hover": { color: c.blue }, ml: 0.5 }}
                   >
                     <PersonAddOutlinedIcon sx={{ fontSize: "0.95rem" }} />
                   </IconButton>
@@ -236,7 +238,7 @@ export function ProjectList({ orgId, orgName, memberCount, projectCount, role }:
         )}
 
         <Box ref={sentinelRef} sx={styles.sentinel}>
-          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: frappe.blue }} />}
+          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: c.blue }} />}
         </Box>
       </Box>
 

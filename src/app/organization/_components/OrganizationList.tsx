@@ -12,9 +12,8 @@ import AddIcon from "@mui/icons-material/Add";
 import { api } from "~/trpc/react";
 import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
-import { styles, roleBadge } from "../styles";
+import { useStyles } from "../styles";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
 
 const LIMIT = 20;
 
@@ -23,6 +22,7 @@ export function OrganizationList() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const { styles, roleBadge, c } = useStyles();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     api.organization.getAll.useInfiniteQuery(
@@ -79,7 +79,7 @@ export function OrganizationList() {
           />
         </Box>
         {!isLoading && (
-          <Box sx={{ fontSize: "0.78rem", color: frappe.overlay0 }}>
+          <Box sx={{ fontSize: "0.78rem", color: c.overlay0 }}>
             {organizations.length} {organizations.length === 1 ? "result" : "results"}
           </Box>
         )}
@@ -140,6 +140,7 @@ export function OrganizationList() {
                       backgroundColor: roleBadge[org.role]?.bg,
                       color: roleBadge[org.role]?.color,
                       border: `1px solid ${roleBadge[org.role]?.border}`,
+                      borderRadius: "3px",
                     }}
                   >
                     {org.role}
@@ -169,7 +170,7 @@ export function OrganizationList() {
 
         <Box ref={sentinelRef} sx={styles.sentinel}>
           {isFetchingNextPage && (
-            <CircularProgress size={18} sx={{ color: frappe.blue }} />
+            <CircularProgress size={18} sx={{ color: c.blue }} />
           )}
         </Box>
       </Box>

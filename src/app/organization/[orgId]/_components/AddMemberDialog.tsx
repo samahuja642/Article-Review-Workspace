@@ -9,7 +9,7 @@ import { Dialog, DialogHeader, DialogBody } from "~/app/_components/widgets/Dial
 import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
+import { useThemeColors } from "~/theme/useThemeColors";
 
 interface AddMemberDialogProps {
   open: boolean;
@@ -21,6 +21,7 @@ interface AddMemberDialogProps {
 
 export function AddMemberDialog({ open, onClose, type, targetId, organizationId }: AddMemberDialogProps) {
   const utils = api.useUtils();
+  const c = useThemeColors();
   const [email, setEmail] = useState("");
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
@@ -95,14 +96,14 @@ export function AddMemberDialog({ open, onClose, type, targetId, organizationId 
           <Box>
             {isSearching ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                <CircularProgress size={20} sx={{ color: frappe.blue }} />
+                <CircularProgress size={20} sx={{ color: c.blue }} />
               </Box>
             ) : !users || users.length === 0 ? (
-              <Box sx={{ py: 3, textAlign: "center", fontSize: "0.82rem", color: frappe.overlay0 }}>
+              <Box sx={{ py: 3, textAlign: "center", fontSize: "0.82rem", color: c.overlay0 }}>
                 No users found matching "{debouncedEmail}"
               </Box>
             ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", border: `1px solid ${frappe.surface0}` }}>
+              <Box sx={{ display: "flex", flexDirection: "column", border: `1px solid ${c.surface0}`, borderRadius: "4px", overflow: "hidden" }}>
                 {users.map((user) => {
                   const added = addedIds.has(user.id);
                   const error = errorMap[user.id];
@@ -115,9 +116,9 @@ export function AddMemberDialog({ open, onClose, type, targetId, organizationId 
                         display: "flex",
                         alignItems: "center",
                         gap: 2,
-                        borderBottom: `1px solid ${frappe.surface0}`,
+                        borderBottom: `1px solid ${c.surface0}`,
                         "&:last-child": { borderBottom: "none" },
-                        backgroundColor: added ? `${frappe.green}08` : "transparent",
+                        backgroundColor: added ? `${c.green}08` : "transparent",
                       }}
                     >
                       <Avatar
@@ -126,18 +127,18 @@ export function AddMemberDialog({ open, onClose, type, targetId, organizationId 
                         sx={{ width: 30, height: 30, fontSize: "0.75rem" }}
                       />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box sx={{ fontSize: "0.85rem", fontWeight: 600, color: frappe.text, lineHeight: 1.3 }}>
+                        <Box sx={{ fontSize: "0.85rem", fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
                           {user.name ?? "Unknown"}
                         </Box>
-                        <Box sx={{ fontSize: "0.75rem", color: frappe.overlay1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Box sx={{ fontSize: "0.75rem", color: c.overlay1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {user.email}
                         </Box>
                         {error && (
-                          <Box sx={{ fontSize: "0.72rem", color: frappe.red, mt: 0.25 }}>{error}</Box>
+                          <Box sx={{ fontSize: "0.72rem", color: c.red, mt: 0.25 }}>{error}</Box>
                         )}
                       </Box>
                       {added ? (
-                        <Box sx={{ fontSize: "0.75rem", color: frappe.green, fontWeight: 600, flexShrink: 0 }}>
+                        <Box sx={{ fontSize: "0.75rem", color: c.green, fontWeight: 600, flexShrink: 0 }}>
                           Added
                         </Box>
                       ) : (

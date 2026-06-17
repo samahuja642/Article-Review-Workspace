@@ -23,3 +23,7 @@ export const addProjectMemberSchema = z.object({
     projectId: z.string().min(1),
     userId: z.string().min(1),
 });
+
+export const getProjectByIdSchema = z.object({
+    projectId: z.string().min(1),
+});

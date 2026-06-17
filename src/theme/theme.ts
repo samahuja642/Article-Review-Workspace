@@ -1,91 +1,164 @@
-"use client";
+import { createTheme, type Theme } from "@mui/material/styles";
+import { frappe, latte } from "./colors";
 
-import { createTheme } from "@mui/material/styles";
-import { frappe } from "./colors";
+export function createAppTheme(mode: "light" | "dark"): Theme {
+  const c = mode === "light" ? latte : frappe;
 
-const theme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: frappe.blue,
-      light: frappe.lavender,
-      dark: frappe.sapphire,
-      contrastText: frappe.crust,
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: c.blue,
+        light: c.lavender,
+        dark: c.sapphire,
+        contrastText: mode === "light" ? "#ffffff" : c.crust,
+      },
+      secondary: {
+        main: c.mauve,
+        light: c.pink,
+        dark: c.maroon,
+        contrastText: mode === "light" ? "#ffffff" : c.crust,
+      },
+      error: {
+        main: c.red,
+      },
+      warning: {
+        main: c.peach,
+      },
+      info: {
+        main: c.sky,
+      },
+      success: {
+        main: c.green,
+      },
+      background: {
+        default: c.base,
+        paper: c.mantle,
+      },
+      text: {
+        primary: c.text,
+        secondary: c.subtext1,
+        disabled: c.overlay1,
+      },
+      divider: c.surface1,
     },
-    secondary: {
-      main: frappe.mauve,
-      light: frappe.pink,
-      dark: frappe.maroon,
-      contrastText: frappe.crust,
+    typography: {
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
-    error: {
-      main: frappe.red,
+    shape: {
+      borderRadius: 4,
     },
-    warning: {
-      main: frappe.peach,
-    },
-    info: {
-      main: frappe.sky,
-    },
-    success: {
-      main: frappe.green,
-    },
-    background: {
-      default: frappe.base,
-      paper: frappe.mantle,
-    },
-    text: {
-      primary: frappe.text,
-      secondary: frappe.subtext1,
-      disabled: frappe.overlay1,
-    },
-    divider: frappe.surface1,
-  },
-  typography: {
-    fontFamily: "var(--font-geist-sans), sans-serif",
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: "none",
-          backgroundColor: frappe.mantle,
-          borderColor: frappe.surface0,
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            backgroundColor: c.mantle,
+            borderColor: c.surface0,
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundColor: c.surface0,
+            borderColor: c.surface1,
+          },
+        },
+      },
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: c.crust,
+            borderBottom: `1px solid ${c.surface0}`,
+            boxShadow: "none",
+          },
+        },
+      },
+      MuiDivider: {
+        styleOverrides: {
+          root: {
+            borderColor: c.surface1,
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            backgroundColor: c.surface1,
+            color: c.text,
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: "none",
+            fontWeight: 600,
+            letterSpacing: "0.01em",
+            borderRadius: 4,
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: 4,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: c.surface1,
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: c.overlay1,
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: c.blue,
+              borderWidth: "1px",
+            },
+          },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            color: c.subtext1,
+            "&.Mui-focused": { color: c.blue },
+          },
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          root: {
+            borderRadius: 4,
+          },
+        },
+      },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: {
+            fontSize: "0.82rem",
+          },
+        },
+      },
+      MuiSkeleton: {
+        styleOverrides: {
+          root: {
+            backgroundColor: c.surface0,
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: c.surface2,
+            color: c.text,
+            fontSize: "0.75rem",
+            borderRadius: 4,
+          },
         },
       },
     },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          backgroundColor: frappe.surface0,
-          borderColor: frappe.surface1,
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: frappe.crust,
-          borderBottom: `1px solid ${frappe.surface0}`,
-        },
-      },
-    },
-    MuiDivider: {
-      styleOverrides: {
-        root: {
-          borderColor: frappe.surface1,
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          backgroundColor: frappe.surface1,
-          color: frappe.text,
-        },
-      },
-    },
-  },
-});
+  });
+}
 
-export default theme;
+// Default dark theme for backward compat
+export default createAppTheme("dark");

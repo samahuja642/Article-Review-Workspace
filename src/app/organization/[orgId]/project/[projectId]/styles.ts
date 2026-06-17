@@ -26,17 +26,24 @@ export function useStyles() {
       flexWrap: "wrap" as const,
     } satisfies SxProps<Theme>,
 
-    breadcrumb: {
+    breadcrumbs: {
       display: "flex",
       alignItems: "center",
-      gap: 0.75,
+      gap: 0.5,
       fontSize: "0.75rem",
       color: c.overlay1,
       mb: 1,
+    } satisfies SxProps<Theme>,
+
+    breadcrumbLink: {
       cursor: "pointer",
-      width: "fit-content",
       textDecoration: "none",
+      color: c.overlay1,
       "&:hover": { color: c.subtext1 },
+    } satisfies SxProps<Theme>,
+
+    breadcrumbSep: {
+      color: c.surface2,
     } satisfies SxProps<Theme>,
 
     pageEyebrow: {
@@ -73,7 +80,7 @@ export function useStyles() {
 
     toolbar: {
       px: { xs: 3, md: 6 },
-      py: 2.5,
+      py: 2,
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -82,8 +89,21 @@ export function useStyles() {
       flexWrap: "wrap" as const,
     } satisfies SxProps<Theme>,
 
+    toolbarLeft: {
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      flexWrap: "wrap" as const,
+    } satisfies SxProps<Theme>,
+
     searchBox: {
-      width: { xs: "100%", sm: 260 },
+      width: { xs: "100%", sm: 240 },
+    } satisfies SxProps<Theme>,
+
+    filterTabs: {
+      display: "flex",
+      alignItems: "center",
+      gap: 0.5,
     } satisfies SxProps<Theme>,
 
     content: {
@@ -100,72 +120,44 @@ export function useStyles() {
 
     row: {
       px: 3,
-      py: 1.5,
+      py: 1.25,
       display: "flex",
       alignItems: "center",
       gap: 2.5,
-      cursor: "pointer",
       borderBottom: `1px solid ${c.surface0}`,
-      transition: "background-color 0.12s ease",
       "&:last-child": { borderBottom: "none" },
+      transition: "background-color 0.1s ease",
       "&:hover": { backgroundColor: c.surface0 },
-    } satisfies SxProps<Theme>,
-
-    rowInitial: {
-      width: 30,
-      height: 30,
-      flexShrink: 0,
-      backgroundColor: c.surface0,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "0.82rem",
-      fontWeight: 700,
-      color: c.blue,
-      letterSpacing: "-0.01em",
-      borderRadius: "4px",
     } satisfies SxProps<Theme>,
 
     rowMain: {
       flex: 1,
       minWidth: 0,
-      display: "flex",
-      alignItems: "center",
-      gap: 2,
     } satisfies SxProps<Theme>,
 
-    rowName: {
+    rowTitle: {
       fontSize: "0.875rem",
       fontWeight: 600,
       color: c.text,
-      whiteSpace: "nowrap" as const,
       overflow: "hidden",
       textOverflow: "ellipsis",
-      flex: 1,
-      minWidth: 0,
+      whiteSpace: "nowrap" as const,
+    } satisfies SxProps<Theme>,
+
+    rowMeta: {
+      fontSize: "0.73rem",
+      color: c.overlay0,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap" as const,
+      mt: 0.2,
     } satisfies SxProps<Theme>,
 
     rowRight: {
       display: "flex",
       alignItems: "center",
-      gap: 3,
+      gap: 1.5,
       flexShrink: 0,
-    } satisfies SxProps<Theme>,
-
-    rowStat: {
-      display: "flex",
-      alignItems: "center",
-      gap: 0.6,
-      fontSize: "0.75rem",
-      color: c.overlay1,
-      whiteSpace: "nowrap" as const,
-    } satisfies SxProps<Theme>,
-
-    rowDate: {
-      fontSize: "0.72rem",
-      color: c.overlay0,
-      minWidth: 64,
-      textAlign: "right" as const,
     } satisfies SxProps<Theme>,
 
     sentinel: {
@@ -196,7 +188,7 @@ export function useStyles() {
     } satisfies SxProps<Theme>,
 
     skeletonRow: {
-      height: 54,
+      height: 58,
       backgroundColor: c.surface0,
       borderBottom: `1px solid ${c.surface0}`,
       "&:last-child": { borderBottom: "none" },
@@ -208,5 +200,12 @@ export function useStyles() {
     MEMBER: { bg: `${c.blue}14`, color: c.blue, border: `${c.blue}40` },
   };
 
-  return { styles, roleBadge, c };
+  const statusBadge: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    PENDING: { bg: `${c.yellow}14`, color: c.yellow, border: `${c.yellow}40`, label: "Pending" },
+    IN_REVIEW: { bg: `${c.blue}14`, color: c.blue, border: `${c.blue}40`, label: "In Review" },
+    REVIEWED: { bg: `${c.green}14`, color: c.green, border: `${c.green}40`, label: "Reviewed" },
+    EXCLUDED: { bg: `${c.red}14`, color: c.red, border: `${c.red}40`, label: "Excluded" },
+  };
+
+  return { styles, roleBadge, statusBadge, c };
 }

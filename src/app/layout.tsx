@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import ThemeRegistry from "~/theme/ThemeRegistry";
+import { ThemeToggle } from "./_components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Article Review Workspace",
@@ -22,7 +23,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={geist.variable}>
         <TRPCReactProvider>
-          <ThemeRegistry>{children}</ThemeRegistry>
+          <ThemeRegistry>
+            <ThemeToggle />
+            {children}
+          </ThemeRegistry>
         </TRPCReactProvider>
       </body>
     </html>

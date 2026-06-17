@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerInsertedHTML } from "next/navigation";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme";
+import { ThemeModeProvider, useThemeMode } from "./ThemeContext";
+import { createAppTheme } from "./theme";
+
+function InnerThemeRegistry({ children }: { children: React.ReactNode }) {
+  const { mode } = useThemeMode();
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  );
+}
 
 export default function ThemeRegistry({
   children,
@@ -51,10 +63,9 @@ export default function ThemeRegistry({
 
   return (
     <CacheProvider value={cache}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
+      <ThemeModeProvider>
+        <InnerThemeRegistry>{children}</InnerThemeRegistry>
+      </ThemeModeProvider>
     </CacheProvider>
   );
 }

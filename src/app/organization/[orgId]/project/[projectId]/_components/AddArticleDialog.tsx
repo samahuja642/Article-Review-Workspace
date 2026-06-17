@@ -9,7 +9,7 @@ import { Dialog, DialogHeader, DialogBody } from "~/app/_components/widgets/Dial
 import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
+import { useThemeColors } from "~/theme/useThemeColors";
 
 type ConflictChoice = "add_anyway" | "overwrite";
 
@@ -21,6 +21,7 @@ interface AddArticleDialogProps {
 
 export function AddArticleDialog({ open, onClose, projectId }: AddArticleDialogProps) {
   const utils = api.useUtils();
+  const c = useThemeColors();
 
   const [title, setTitle] = useState("");
   const [pmid, setPmid] = useState("");
@@ -159,49 +160,58 @@ export function AddArticleDialog({ open, onClose, projectId }: AddArticleDialogP
                 sx={{
                   mt: 1.25,
                   p: 1.5,
-                  border: `1px solid ${frappe.yellow}44`,
-                  backgroundColor: `${frappe.yellow}0d`,
+                  border: `1px solid ${c.yellow}44`,
+                  backgroundColor: `${c.yellow}0d`,
+                  borderRadius: "4px",
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                  <WarningAmberOutlinedIcon sx={{ fontSize: "0.95rem", color: frappe.yellow, mt: "1px", flexShrink: 0 }} />
+                  <WarningAmberOutlinedIcon sx={{ fontSize: "0.95rem", color: c.yellow, mt: "1px", flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ fontSize: "0.78rem", fontWeight: 600, color: frappe.yellow }}>
+                    <Box sx={{ fontSize: "0.78rem", fontWeight: 600, color: c.yellow }}>
                       Already in project
                     </Box>
-                    <Box sx={{ fontSize: "0.78rem", color: frappe.text, mt: 0.25 }}>{conflict.title}</Box>
+                    <Box sx={{ fontSize: "0.78rem", color: c.text, mt: 0.25 }}>{conflict.title}</Box>
                     {conflictMeta && (
-                      <Box sx={{ fontSize: "0.72rem", color: frappe.overlay1, mt: 0.15 }}>{conflictMeta}</Box>
+                      <Box sx={{ fontSize: "0.72rem", color: c.overlay1, mt: 0.15 }}>{conflictMeta}</Box>
                     )}
-                    <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                      <Box
-                        component="button"
-                        onClick={() => setConflictChoice("add_anyway")}
-                        sx={{
-                          px: 1.25, py: 0.3, fontSize: "0.7rem", fontWeight: conflictChoice === "add_anyway" ? 700 : 400,
-                          border: `1px solid ${conflictChoice === "add_anyway" ? frappe.blue : frappe.surface1}`,
-                          backgroundColor: conflictChoice === "add_anyway" ? `${frappe.blue}22` : "transparent",
-                          color: conflictChoice === "add_anyway" ? frappe.blue : frappe.overlay1,
-                          cursor: "pointer",
-                          "&:hover": { borderColor: frappe.blue, color: frappe.blue },
-                        }}
-                      >
-                        Add Anyway
-                      </Box>
-                      <Box
-                        component="button"
-                        onClick={() => setConflictChoice("overwrite")}
-                        sx={{
-                          px: 1.25, py: 0.3, fontSize: "0.7rem", fontWeight: conflictChoice === "overwrite" ? 700 : 400,
-                          border: `1px solid ${conflictChoice === "overwrite" ? frappe.peach : frappe.surface1}`,
-                          backgroundColor: conflictChoice === "overwrite" ? `${frappe.peach}22` : "transparent",
-                          color: conflictChoice === "overwrite" ? frappe.peach : frappe.overlay1,
-                          cursor: "pointer",
-                          "&:hover": { borderColor: frappe.peach, color: frappe.peach },
-                        }}
-                      >
-                        Overwrite Existing
-                      </Box>
+
+                    {/* Segmented control for conflict resolution */}
+                    <Box
+                      sx={{
+                        display: "inline-flex",
+                        mt: 1,
+                        border: `1px solid ${c.surface1}`,
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {(["add_anyway", "overwrite"] as ConflictChoice[]).map((choice, idx) => {
+                        const isActive = conflictChoice === choice;
+                        const label = choice === "add_anyway" ? "Add Anyway" : "Overwrite Existing";
+                        return (
+                          <Box
+                            key={choice}
+                            component="button"
+                            onClick={() => setConflictChoice(choice)}
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: "0.72rem",
+                              fontWeight: isActive ? 600 : 400,
+                              backgroundColor: isActive ? c.blue : "transparent",
+                              color: isActive ? "#ffffff" : c.overlay1,
+                              border: "none",
+                              borderLeft: idx > 0 ? `1px solid ${c.surface1}` : "none",
+                              cursor: "pointer",
+                              transition: "all 0.12s ease",
+                              "&:hover": !isActive ? { backgroundColor: c.surface0, color: c.text } : {},
+                            }}
+                          >
+                            {label}
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Box>
                 </Box>
@@ -237,7 +247,7 @@ export function AddArticleDialog({ open, onClose, projectId }: AddArticleDialogP
             </Box>
           </Box>
 
-          {error && <Box sx={{ fontSize: "0.8rem", color: frappe.red }}>{error}</Box>}
+          {error && <Box sx={{ fontSize: "0.8rem", color: c.red }}>{error}</Box>}
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, pt: 0.5 }}>
             <Button intent="ghost" onClick={handleClose} disabled={isPending}>Cancel</Button>

@@ -8,7 +8,7 @@ import { api } from "~/trpc/react";
 import { Dialog, DialogHeader, DialogBody } from "~/app/_components/widgets/Dialog";
 import { Button } from "~/app/_components/widgets/Button";
 import { TextField } from "~/app/_components/widgets/TextField";
-import { frappe } from "~/theme/colors";
+import { useThemeColors } from "~/theme/useThemeColors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,14 +45,10 @@ interface BlankPmidEntry {
 }
 
 interface ConflictEntry {
-  // all incoming rows that share this PMID (grouped)
   incomingRows: ParsedRow[];
   existing: ExistingArticle;
-  // mutable resolution state (stored inline to stay in sync)
   resolution: Resolution;
-  // which incoming row is selected as the overwrite source (default 0)
   selectedRowIndex: number;
-  // editedRow = editable version of the selected row (used for "overwrite")
   editedRow: ParsedRow;
   isDirty: boolean;
   isEditing: boolean;
@@ -116,7 +112,7 @@ function parseSheet(workbook: XLSX.WorkBook): { rows: ParsedRow[]; skipped: numb
   return { rows, skipped };
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Segmented resolution control ─────────────────────────────────────────────
 
 function ResolutionToggle({
   value,
@@ -125,44 +121,63 @@ function ResolutionToggle({
   value: Resolution;
   onChange: (r: Resolution) => void;
 }) {
+  const c = useThemeColors();
   const options: { key: Resolution; label: string }[] = [
     { key: "skip", label: "Skip" },
     { key: "overwrite", label: "Overwrite" },
     { key: "keep_both", label: "Keep Both" },
   ];
+
   return (
-    <Box sx={{ display: "flex", gap: 0.75 }}>
-      {options.map((opt) => (
-        <Box
-          key={opt.key}
-          component="button"
-          onClick={() => onChange(opt.key)}
-          sx={{
-            px: 1.25, py: 0.3,
-            fontSize: "0.7rem",
-            fontWeight: value === opt.key ? 700 : 400,
-            border: `1px solid ${value === opt.key ? frappe.blue : frappe.surface1}`,
-            backgroundColor: value === opt.key ? `${frappe.blue}22` : "transparent",
-            color: value === opt.key ? frappe.blue : frappe.overlay1,
-            cursor: "pointer",
-            transition: "all 0.1s",
-            "&:hover": { borderColor: frappe.blue, color: frappe.blue },
-          }}
-        >
-          {opt.label}
-        </Box>
-      ))}
+    <Box
+      sx={{
+        display: "inline-flex",
+        border: `1px solid ${c.surface1}`,
+        borderRadius: "4px",
+        overflow: "hidden",
+      }}
+    >
+      {options.map((opt, idx) => {
+        const isActive = value === opt.key;
+        return (
+          <Box
+            key={opt.key}
+            component="button"
+            onClick={() => onChange(opt.key)}
+            sx={{
+              px: 1.25,
+              py: 0.4,
+              fontSize: "0.7rem",
+              fontWeight: isActive ? 600 : 400,
+              backgroundColor: isActive ? c.blue : "transparent",
+              color: isActive ? "#ffffff" : c.overlay1,
+              border: "none",
+              borderLeft: idx > 0 ? `1px solid ${c.surface1}` : "none",
+              cursor: "pointer",
+              transition: "background-color 0.1s ease, color 0.1s ease",
+              "&:hover": !isActive ? { backgroundColor: c.surface0, color: c.text } : {},
+            }}
+          >
+            {opt.label}
+          </Box>
+        );
+      })}
     </Box>
   );
 }
 
+// ─── ConflictRow ──────────────────────────────────────────────────────────────
+
 function ConflictRow({
   entry,
   onUpdate,
+  onEditDone,
 }: {
   entry: ConflictEntry;
   onUpdate: (patch: Partial<ConflictEntry>) => void;
+  onEditDone: () => void;
 }) {
+  const c = useThemeColors();
   const { existing, resolution, editedRow, isDirty, isEditing, incomingRows, selectedRowIndex } = entry;
 
   const existingMeta = [existing.authors, existing.journal, existing.publicationYear]
@@ -173,113 +188,185 @@ function ConflictRow({
     onUpdate({ selectedRowIndex: idx, editedRow: { ...incomingRows[idx]! }, isDirty: false, isEditing: false });
   };
 
+  const isSkipped = resolution === "skip";
+
   return (
-    <Box sx={{ border: `1px solid ${frappe.surface0}`, backgroundColor: frappe.mantle, overflow: "hidden", flexShrink: 0 }}>
+    <Box sx={{ border: `1px solid ${c.surface0}`, backgroundColor: c.mantle, overflow: "hidden", flexShrink: 0, borderRadius: "4px" }}>
       {/* Header: PMID + resolution toggle */}
-      <Box sx={{ px: 2, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, backgroundColor: frappe.surface0 }}>
-        <Box sx={{ fontSize: "0.72rem", fontWeight: 600, color: frappe.overlay1 }}>
-          PMID: <Box component="span" sx={{ color: frappe.text }}>{incomingRows[0]!.pmid ?? "—"}</Box>
+      <Box sx={{ px: 2, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, backgroundColor: c.surface0, borderBottom: `1px solid ${c.surface0}` }}>
+        <Box sx={{ fontSize: "0.72rem", fontWeight: 600, color: c.overlay1 }}>
+          PMID: <Box component="span" sx={{ color: c.text }}>{incomingRows[0]!.pmid ?? "—"}</Box>
         </Box>
         <ResolutionToggle value={resolution} onChange={(r) => onUpdate({ resolution: r })} />
       </Box>
 
       {/* Existing article */}
-      <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${frappe.surface0}` }}>
-        <Box sx={{ fontSize: "0.67rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: frappe.overlay0, mb: 0.5 }}>
-          Existing (in project)
+      <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${c.surface0}` }}>
+        <Box sx={{ fontSize: "0.67rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.overlay0, mb: 0.5 }}>
+          Existing
         </Box>
-        <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: frappe.text }}>{existing.title}</Box>
-        {existingMeta && <Box sx={{ fontSize: "0.73rem", color: frappe.overlay1, mt: 0.25 }}>{existingMeta}</Box>}
+        <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: c.text }}>{existing.title}</Box>
+        {existingMeta && <Box sx={{ fontSize: "0.73rem", color: c.overlay1, mt: 0.25 }}>{existingMeta}</Box>}
       </Box>
 
-      {/* Incoming rows — each selectable as the overwrite source */}
-      <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
-        <Box sx={{ fontSize: "0.67rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: frappe.overlay0, mb: 1 }}>
-          Incoming (from file)
+      {/* Incoming rows */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1, opacity: isSkipped ? 0.5 : 1, transition: "opacity 0.15s ease" }}>
+        <Box sx={{ fontSize: "0.67rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.overlay0, mb: 1 }}>
+          Incoming
           {incomingRows.length > 1 && (
-            <Box component="span" sx={{ color: frappe.overlay1, ml: 0.75, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+            <Box component="span" sx={{ color: c.overlay1, ml: 0.75, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
               · {incomingRows.length} entries{resolution === "overwrite" ? " — click to select which to use" : ""}
             </Box>
           )}
-          {isDirty && <Box component="span" sx={{ color: frappe.yellow, ml: 0.75 }}>• edited</Box>}
+          {isDirty && <Box component="span" sx={{ color: c.yellow, ml: 0.75 }}>• edited</Box>}
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 1 }}>
-          {incomingRows.map((row, idx) => {
-            const isSelected = idx === selectedRowIndex;
-            const displayRow = isSelected ? editedRow : row;
-            const meta = [displayRow.authors, displayRow.journal, displayRow.publicationYear].filter(Boolean).join(" · ");
-            return (
-              <Box
-                key={idx}
-                onClick={() => selectRow(idx)}
-                sx={{
-                  px: 1.5, py: 1,
-                  border: `1px solid ${isSelected ? frappe.blue : frappe.surface1}`,
-                  backgroundColor: isSelected ? `${frappe.blue}0d` : "transparent",
-                  cursor: incomingRows.length > 1 && !isSelected ? "pointer" : "default",
-                  "&:hover": incomingRows.length > 1 && !isSelected ? { borderColor: frappe.overlay0 } : {},
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    {isSelected && isEditing ? (
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-                        <TextField label="Title" value={editedRow.title} size="small"
-                          onChange={(e) => onUpdate({ editedRow: { ...editedRow, title: e.target.value }, isDirty: true })} />
-                        <Box sx={{ display: "flex", gap: 1.5 }}>
-                          <Box sx={{ flex: 1 }}>
-                            <TextField label="Authors" value={editedRow.authors ?? ""} size="small"
-                              onChange={(e) => onUpdate({ editedRow: { ...editedRow, authors: e.target.value || undefined }, isDirty: true })} />
-                          </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <TextField label="Journal" value={editedRow.journal ?? ""} size="small"
-                              onChange={(e) => onUpdate({ editedRow: { ...editedRow, journal: e.target.value || undefined }, isDirty: true })} />
-                          </Box>
-                          <Box sx={{ width: 80 }}>
-                            <TextField label="Year" value={editedRow.publicationYear?.toString() ?? ""} size="small"
-                              onChange={(e) => {
-                                const n = parseInt(e.target.value, 10);
-                                onUpdate({ editedRow: { ...editedRow, publicationYear: isNaN(n) ? undefined : n }, isDirty: true });
-                              }} />
-                          </Box>
+          {incomingRows.length === 1 ? (
+            // Single row — no selection UI, just display it
+            <Box sx={{ px: 1.5, py: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  {isEditing ? (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                      <TextField label="Title" value={editedRow.title} size="small"
+                        onChange={(e) => onUpdate({ editedRow: { ...editedRow, title: e.target.value }, isDirty: true })} />
+                      <Box sx={{ display: "flex", gap: 1.5 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <TextField label="Authors" value={editedRow.authors ?? ""} size="small"
+                            onChange={(e) => onUpdate({ editedRow: { ...editedRow, authors: e.target.value || undefined }, isDirty: true })} />
                         </Box>
-                        <Box sx={{ display: "flex", gap: 1.5 }}>
-                          <Box sx={{ flex: 1 }}>
-                            <TextField label="DOI" value={editedRow.doi ?? ""} size="small"
-                              onChange={(e) => onUpdate({ editedRow: { ...editedRow, doi: e.target.value || undefined }, isDirty: true })} />
-                          </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <TextField label="PMID" value={editedRow.pmid ?? ""} size="small"
-                              onChange={(e) => onUpdate({ editedRow: { ...editedRow, pmid: e.target.value || undefined }, isDirty: true })} />
-                          </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <TextField label="Journal" value={editedRow.journal ?? ""} size="small"
+                            onChange={(e) => onUpdate({ editedRow: { ...editedRow, journal: e.target.value || undefined }, isDirty: true })} />
+                        </Box>
+                        <Box sx={{ width: 80 }}>
+                          <TextField label="Year" value={editedRow.publicationYear?.toString() ?? ""} size="small"
+                            onChange={(e) => {
+                              const n = parseInt(e.target.value, 10);
+                              onUpdate({ editedRow: { ...editedRow, publicationYear: isNaN(n) ? undefined : n }, isDirty: true });
+                            }} />
                         </Box>
                       </Box>
-                    ) : (
-                      <>
-                        <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: frappe.text }}>{displayRow.title}</Box>
-                        {meta && <Box sx={{ fontSize: "0.73rem", color: frappe.overlay1, mt: 0.25 }}>{meta}</Box>}
-                      </>
-                    )}
-                  </Box>
-                  {isSelected && (
-                    <Box
-                      component="button"
-                      onClick={(e) => { e.stopPropagation(); onUpdate({ isEditing: !isEditing }); }}
-                      sx={{ fontSize: "0.7rem", color: frappe.blue, background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, "&:hover": { textDecoration: "underline" } }}
-                    >
-                      {isEditing ? "Done" : "Edit"}
                     </Box>
+                  ) : (
+                    <>
+                      <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: c.text }}>{editedRow.title}</Box>
+                      {[editedRow.authors, editedRow.journal, editedRow.publicationYear].filter(Boolean).join(" · ") && (
+                        <Box sx={{ fontSize: "0.73rem", color: c.overlay1, mt: 0.25 }}>
+                          {[editedRow.authors, editedRow.journal, editedRow.publicationYear].filter(Boolean).join(" · ")}
+                        </Box>
+                      )}
+                    </>
                   )}
                 </Box>
+                <Box
+                  component="button"
+                  onClick={(e) => { e.stopPropagation(); isEditing ? onEditDone() : onUpdate({ isEditing: true }); }}
+                  sx={{
+                    fontSize: "0.7rem",
+                    color: c.blue,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    flexShrink: 0,
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                >
+                  {isEditing ? "Done" : "Edit"}
+                </Box>
               </Box>
-            );
-          })}
+            </Box>
+          ) : (
+            incomingRows.map((row, idx) => {
+              const isSelected = idx === selectedRowIndex;
+              const displayRow = isSelected ? editedRow : row;
+              const meta = [displayRow.authors, displayRow.journal, displayRow.publicationYear].filter(Boolean).join(" · ");
+              return (
+                <Box
+                  key={idx}
+                  onClick={() => selectRow(idx)}
+                  sx={{
+                    px: 1.5, py: 1,
+                    border: `1px solid ${isSelected ? c.blue : c.surface1}`,
+                    backgroundColor: isSelected ? `${c.blue}0d` : "transparent",
+                    borderRadius: "3px",
+                    cursor: !isSelected ? "pointer" : "default",
+                    "&:hover": !isSelected ? { borderColor: c.overlay0 } : {},
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {isSelected && isEditing ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                          <TextField label="Title" value={editedRow.title} size="small"
+                            onChange={(e) => onUpdate({ editedRow: { ...editedRow, title: e.target.value }, isDirty: true })} />
+                          <Box sx={{ display: "flex", gap: 1.5 }}>
+                            <Box sx={{ flex: 1 }}>
+                              <TextField label="Authors" value={editedRow.authors ?? ""} size="small"
+                                onChange={(e) => onUpdate({ editedRow: { ...editedRow, authors: e.target.value || undefined }, isDirty: true })} />
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                              <TextField label="Journal" value={editedRow.journal ?? ""} size="small"
+                                onChange={(e) => onUpdate({ editedRow: { ...editedRow, journal: e.target.value || undefined }, isDirty: true })} />
+                            </Box>
+                            <Box sx={{ width: 80 }}>
+                              <TextField label="Year" value={editedRow.publicationYear?.toString() ?? ""} size="small"
+                                onChange={(e) => {
+                                  const n = parseInt(e.target.value, 10);
+                                  onUpdate({ editedRow: { ...editedRow, publicationYear: isNaN(n) ? undefined : n }, isDirty: true });
+                                }} />
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 1.5 }}>
+                            <Box sx={{ flex: 1 }}>
+                              <TextField label="DOI" value={editedRow.doi ?? ""} size="small"
+                                onChange={(e) => onUpdate({ editedRow: { ...editedRow, doi: e.target.value || undefined }, isDirty: true })} />
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                              <TextField label="PMID" value={editedRow.pmid ?? ""} size="small"
+                                onChange={(e) => onUpdate({ editedRow: { ...editedRow, pmid: e.target.value || undefined }, isDirty: true })} />
+                            </Box>
+                          </Box>
+                        </Box>
+                      ) : (
+                        <>
+                          <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: c.text }}>{displayRow.title}</Box>
+                          {meta && <Box sx={{ fontSize: "0.73rem", color: c.overlay1, mt: 0.25 }}>{meta}</Box>}
+                        </>
+                      )}
+                    </Box>
+                    {isSelected && (
+                      <Box
+                        component="button"
+                        onClick={(e) => { e.stopPropagation(); isEditing ? onEditDone() : onUpdate({ isEditing: true }); }}
+                        sx={{
+                          fontSize: "0.7rem",
+                          color: c.blue,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          flexShrink: 0,
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {isEditing ? "Done" : "Edit"}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              );
+            })
+          )}
         </Box>
       </Box>
     </Box>
   );
 }
+
+// ─── BlankPmidRow ─────────────────────────────────────────────────────────────
 
 function BlankPmidRow({
   entry,
@@ -288,11 +375,21 @@ function BlankPmidRow({
   entry: BlankPmidEntry;
   onUpdate: (patch: Partial<BlankPmidEntry>) => void;
 }) {
+  const c = useThemeColors();
   const { editedRow, isDirty, isEditing, skip } = entry;
   const meta = [editedRow.authors, editedRow.journal, editedRow.publicationYear].filter(Boolean).join(" · ");
 
   return (
-    <Box sx={{ border: `1px solid ${skip ? frappe.surface0 : frappe.surface1}`, backgroundColor: skip ? "transparent" : frappe.mantle, flexShrink: 0, opacity: skip ? 0.5 : 1 }}>
+    <Box
+      sx={{
+        border: `1px solid ${c.surface0}`,
+        backgroundColor: c.mantle,
+        borderRadius: "4px",
+        flexShrink: 0,
+        opacity: skip ? 0.6 : 1,
+        transition: "opacity 0.15s ease",
+      }}
+    >
       <Box sx={{ px: 2, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {isEditing ? (
@@ -323,10 +420,10 @@ function BlankPmidRow({
             </Box>
           ) : (
             <>
-              <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: frappe.text }}>{editedRow.title}</Box>
-              {meta && <Box sx={{ fontSize: "0.73rem", color: frappe.overlay1, mt: 0.25 }}>{meta}</Box>}
+              <Box sx={{ fontSize: "0.82rem", fontWeight: 600, color: c.text }}>{editedRow.title}</Box>
+              {meta && <Box sx={{ fontSize: "0.73rem", color: c.overlay1, mt: 0.25 }}>{meta}</Box>}
               {isDirty && editedRow.pmid && (
-                <Box sx={{ fontSize: "0.72rem", color: frappe.green, mt: 0.25 }}>PMID: {editedRow.pmid}</Box>
+                <Box sx={{ fontSize: "0.72rem", color: c.green, mt: 0.25 }}>PMID: {editedRow.pmid}</Box>
               )}
             </>
           )}
@@ -335,23 +432,53 @@ function BlankPmidRow({
           <Box
             component="button"
             onClick={() => onUpdate({ isEditing: !isEditing })}
-            sx={{ fontSize: "0.7rem", color: frappe.blue, background: "none", border: "none", cursor: "pointer", padding: 0, "&:hover": { textDecoration: "underline" } }}
+            sx={{
+              fontSize: "0.7rem",
+              color: c.blue,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              "&:hover": { textDecoration: "underline" },
+            }}
           >
             {isEditing ? "Done" : "Edit"}
           </Box>
+          {/* Segmented import/skip toggle */}
           <Box
-            component="button"
-            onClick={() => onUpdate({ skip: !skip, isEditing: false })}
             sx={{
-              px: 1.25, py: 0.3, fontSize: "0.7rem", fontWeight: 600,
-              border: `1px solid ${skip ? frappe.surface1 : frappe.red}`,
-              backgroundColor: skip ? "transparent" : `${frappe.red}22`,
-              color: skip ? frappe.overlay1 : frappe.red,
-              cursor: "pointer",
-              "&:hover": { borderColor: skip ? frappe.overlay0 : frappe.red },
+              display: "inline-flex",
+              border: `1px solid ${c.surface1}`,
+              borderRadius: "3px",
+              overflow: "hidden",
             }}
           >
-            {skip ? "Import" : "Skip"}
+            {([false, true] as const).map((skipVal, idx) => {
+              const isActive = skip === skipVal;
+              const label = skipVal ? "Skip" : "Import";
+              return (
+                <Box
+                  key={label}
+                  component="button"
+                  onClick={() => onUpdate({ skip: skipVal, isEditing: false })}
+                  sx={{
+                    px: 1.25,
+                    py: 0.3,
+                    fontSize: "0.7rem",
+                    fontWeight: isActive ? 600 : 400,
+                    backgroundColor: isActive ? (skipVal ? c.surface1 : c.blue) : "transparent",
+                    color: isActive ? (skipVal ? c.text : "#ffffff") : c.overlay1,
+                    border: "none",
+                    borderLeft: idx > 0 ? `1px solid ${c.surface1}` : "none",
+                    cursor: "pointer",
+                    transition: "background-color 0.1s ease, color 0.1s ease",
+                    "&:hover": !isActive ? { backgroundColor: c.surface0, color: c.text } : {},
+                  }}
+                >
+                  {label}
+                </Box>
+              );
+            })}
           </Box>
         </Box>
       </Box>
@@ -371,23 +498,22 @@ interface ImportArticlesDialogProps {
 
 export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticlesDialogProps) {
   const utils = api.useUtils();
+  const c = useThemeColors();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Upload phase
   const [phase, setPhase] = useState<Phase>("upload");
   const [parsed, setParsed] = useState<{ rows: ParsedRow[]; skipped: number } | null>(null);
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
 
-  // Resolve phase — single unified array keeps conflicts + state in sync
   const [firstCreated, setFirstCreated] = useState(0);
   const [autoSkipped, setAutoSkipped] = useState(0);
   const [entries, setEntries] = useState<ConflictEntry[]>([]);
   const [blankEntries, setBlankEntries] = useState<BlankPmidEntry[]>([]);
+  const [toCreate, setToCreate] = useState<ParsedRow[]>([]);
 
   const importMutation = api.article.import.useMutation({
     onSuccess: (result) => {
-      // Second-pass result (no conflicts, no blank rows) — done
       if (result.conflicts.length === 0 && result.blankPmidRows.length === 0) {
         void utils.article.getByProject.invalidate({ projectId });
         void utils.project.getById.invalidate({ projectId });
@@ -399,7 +525,6 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         return;
       }
 
-      // Group conflicts by PMID so duplicate-PMID rows share one handler
       const grouped = new Map<string, { incomingRows: ParsedRow[]; existing: ExistingArticle }>();
       for (const c of result.conflicts) {
         const pmid = (c.incomingRow as ParsedRow).pmid ?? "__no_pmid__";
@@ -409,7 +534,6 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         grouped.get(pmid)!.incomingRows.push(c.incomingRow as ParsedRow);
       }
 
-      // Auto-skip groups where every incoming row is identical to the existing article
       let autoSkippedCount = 0;
       const newEntries: ConflictEntry[] = [];
       for (const { incomingRows, existing } of grouped.values()) {
@@ -428,6 +552,7 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         });
       }
 
+      // Blank PMID rows default to import (skip: false)
       const newBlankEntries: BlankPmidEntry[] = (result.blankPmidRows as ParsedRow[]).map((row) => ({
         editedRow: { ...row },
         isDirty: false,
@@ -438,7 +563,6 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
       setFirstCreated(result.created);
       setAutoSkipped(autoSkippedCount);
 
-      // If nothing needs user input, close immediately
       if (newEntries.length === 0 && newBlankEntries.length === 0) {
         void utils.article.getByProject.invalidate({ projectId });
         void utils.project.getById.invalidate({ projectId });
@@ -464,11 +588,10 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
     setAutoSkipped(0);
     setEntries([]);
     setBlankEntries([]);
+    setToCreate([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     onClose();
   };
-
-  // ── Upload phase ──────────────────────────────────────────────────────────
 
   const handleFile = (file: File) => {
     setParseError("");
@@ -492,8 +615,6 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
     reader.readAsArrayBuffer(file);
   };
 
-  // ── Resolve phase ─────────────────────────────────────────────────────────
-
   const updateEntry = (index: number, patch: Partial<ConflictEntry>) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
   };
@@ -508,6 +629,80 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
 
   const updateBlankEntry = (index: number, patch: Partial<BlankPmidEntry>) => {
     setBlankEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  };
+
+  // Called when user clicks "Done" in a ConflictRow edit form.
+  // If the PMID changed, re-routes the row: merge into another group, move to blank section, or check for a new conflict.
+  const handleEditDone = async (entryIndex: number) => {
+    const snapshot = entries; // capture before any setState
+    const entry = snapshot[entryIndex];
+    if (!entry) return;
+
+    const originalPmid = entry.existing.pmid ?? undefined;
+    const newPmid = entry.editedRow.pmid?.trim() || undefined;
+
+    // PMID unchanged — just close edit mode
+    if (newPmid === originalPmid) {
+      updateEntry(entryIndex, { isEditing: false });
+      return;
+    }
+
+    // Extract the edited row from its group
+    const extractedRow = { ...entry.editedRow };
+    const remainingRows = entry.incomingRows.filter((_, ri) => ri !== entry.selectedRowIndex);
+
+    // Compute updated entries after removing/shrinking this group
+    let newEntries: ConflictEntry[] =
+      remainingRows.length === 0
+        ? snapshot.filter((_, i) => i !== entryIndex)
+        : snapshot.map((e, i) =>
+            i === entryIndex
+              ? { ...e, incomingRows: remainingRows, selectedRowIndex: 0, editedRow: { ...remainingRows[0]! }, isDirty: false, isEditing: false }
+              : e,
+          );
+
+    // If new PMID is blank → move to blank section
+    if (!newPmid) {
+      setEntries(newEntries);
+      setBlankEntries((prev) => [...prev, { editedRow: extractedRow, isDirty: true, isEditing: false, skip: false }]);
+      return;
+    }
+
+    // If new PMID matches an existing group → merge into it
+    const matchIdx = newEntries.findIndex((e) => e.existing.pmid === newPmid);
+    if (matchIdx >= 0) {
+      newEntries = newEntries.map((e, i) =>
+        i === matchIdx ? { ...e, incomingRows: [...e.incomingRows, extractedRow] } : e,
+      );
+      setEntries(newEntries);
+      return;
+    }
+
+    // Apply group removal first, then async-check for a new conflict
+    setEntries(newEntries);
+
+    try {
+      const conflicts = await utils.article.checkConflicts.fetch({ projectId, pmids: [newPmid] });
+      if (conflicts.length > 0 && conflicts[0]) {
+        // New conflict found — add a fresh group
+        const newEntry: ConflictEntry = {
+          incomingRows: [extractedRow],
+          existing: conflicts[0] as ExistingArticle,
+          resolution: "skip",
+          selectedRowIndex: 0,
+          editedRow: { ...extractedRow },
+          isDirty: false,
+          isEditing: false,
+        };
+        setEntries((prev) => [...prev, newEntry]);
+      } else {
+        // No conflict — will be created on submit
+        setToCreate((prev) => [...prev, extractedRow]);
+      }
+    } catch {
+      // On error, fall back to direct create
+      setToCreate((prev) => [...prev, extractedRow]);
+    }
   };
 
   const handleResolve = () => {
@@ -525,10 +720,12 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
       }
     }
 
-    // Include non-skipped blank-PMID rows
     for (const e of blankEntries) {
       if (!e.skip) rows.push(e.editedRow);
     }
+
+    // Rows whose PMID was changed to a non-conflicting value during resolution
+    rows.push(...toCreate);
 
     if (overwrites.length === 0 && rows.length === 0) {
       void utils.article.getByProject.invalidate({ projectId });
@@ -541,7 +738,7 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
     importMutation.mutate({ projectId, rows, overwrites });
   };
 
-  // ── Render: upload phase ──────────────────────────────────────────────────
+  // ── Upload phase ──────────────────────────────────────────────────────────
 
   if (phase === "upload") {
     const preview = parsed?.rows.slice(0, 5) ?? [];
@@ -550,10 +747,10 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         <DialogHeader title="Import Articles" onClose={handleClose} />
         <DialogBody>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, px: 1, py: 0.5 }}>
-            <Box sx={{ fontSize: "0.78rem", color: frappe.overlay1 }}>
+            <Box sx={{ fontSize: "0.78rem", color: c.overlay1 }}>
               Upload a CSV or XLSX file.{" "}
               <Box component="a" href="/sample_article_import.xlsx" download
-                sx={{ color: frappe.blue, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+                sx={{ color: c.blue, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
                 Download sample template
               </Box>
             </Box>
@@ -563,48 +760,54 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
               onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
               onClick={() => fileInputRef.current?.click()}
               sx={{
-                border: `2px dashed ${frappe.surface1}`, borderRadius: 1, py: 5,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                cursor: "pointer", transition: "border-color 0.15s",
-                "&:hover": { borderColor: frappe.blue },
+                border: `2px dashed ${c.surface1}`,
+                borderRadius: "4px",
+                py: 5,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                cursor: "pointer",
+                transition: "border-color 0.15s ease",
+                "&:hover": { borderColor: c.blue },
               }}
             >
-              <Box sx={{ fontSize: "0.875rem", fontWeight: 600, color: frappe.subtext1 }}>
+              <Box sx={{ fontSize: "0.875rem", fontWeight: 600, color: c.subtext1 }}>
                 {fileName ? fileName : "Click or drag & drop a file here"}
               </Box>
-              <Box sx={{ fontSize: "0.75rem", color: frappe.overlay0 }}>Supports .xlsx and .csv</Box>
+              <Box sx={{ fontSize: "0.75rem", color: c.overlay0 }}>Supports .xlsx and .csv</Box>
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
             </Box>
 
-            {parseError && <Box sx={{ fontSize: "0.8rem", color: frappe.red }}>{parseError}</Box>}
+            {parseError && <Box sx={{ fontSize: "0.8rem", color: c.red }}>{parseError}</Box>}
 
             {parsed && (
               <Box>
-                <Box sx={{ fontSize: "0.8rem", color: frappe.overlay1, mb: 1.5 }}>
-                  <Box component="span" sx={{ fontWeight: 600, color: frappe.green }}>
+                <Box sx={{ fontSize: "0.8rem", color: c.overlay1, mb: 1.5 }}>
+                  <Box component="span" sx={{ fontWeight: 600, color: c.green }}>
                     {parsed.rows.length} article{parsed.rows.length !== 1 ? "s" : ""} ready to import
                   </Box>
                   {parsed.skipped > 0 && (
-                    <Box component="span" sx={{ color: frappe.yellow, ml: 1 }}>
+                    <Box component="span" sx={{ color: c.yellow, ml: 1 }}>
                       · {parsed.skipped} row{parsed.skipped !== 1 ? "s" : ""} skipped (missing title)
                     </Box>
                   )}
                 </Box>
-                <Box sx={{ border: `1px solid ${frappe.surface0}`, backgroundColor: frappe.mantle, overflow: "hidden", fontSize: "0.75rem" }}>
-                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 80px", px: 2, py: 1, backgroundColor: frappe.surface0, color: frappe.overlay0, fontWeight: 600, letterSpacing: "0.06em", fontSize: "0.68rem", textTransform: "uppercase", gap: 2 }}>
+                <Box sx={{ border: `1px solid ${c.surface0}`, backgroundColor: c.mantle, overflow: "hidden", fontSize: "0.75rem", borderRadius: "4px" }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 80px", px: 2, py: 1, backgroundColor: c.surface0, color: c.overlay0, fontWeight: 600, letterSpacing: "0.06em", fontSize: "0.68rem", textTransform: "uppercase", gap: 2 }}>
                     <Box>Title</Box><Box>Authors</Box><Box>Journal</Box><Box>Year</Box>
                   </Box>
                   {preview.map((row, i) => (
-                    <Box key={i} sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 80px", px: 2, py: 1.25, gap: 2, borderTop: `1px solid ${frappe.surface0}`, color: frappe.text }}>
+                    <Box key={i} sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 80px", px: 2, py: 1.25, gap: 2, borderTop: `1px solid ${c.surface0}`, color: c.text }}>
                       <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.title}</Box>
-                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: frappe.overlay1 }}>{row.authors ?? "—"}</Box>
-                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: frappe.overlay1 }}>{row.journal ?? "—"}</Box>
-                      <Box sx={{ color: frappe.overlay1 }}>{row.publicationYear ?? "—"}</Box>
+                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: c.overlay1 }}>{row.authors ?? "—"}</Box>
+                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: c.overlay1 }}>{row.journal ?? "—"}</Box>
+                      <Box sx={{ color: c.overlay1 }}>{row.publicationYear ?? "—"}</Box>
                     </Box>
                   ))}
                   {parsed.rows.length > 5 && (
-                    <Box sx={{ px: 2, py: 1, borderTop: `1px solid ${frappe.surface0}`, color: frappe.overlay0, fontSize: "0.72rem" }}>
+                    <Box sx={{ px: 2, py: 1, borderTop: `1px solid ${c.surface0}`, color: c.overlay0, fontSize: "0.72rem" }}>
                       … and {parsed.rows.length - 5} more
                     </Box>
                   )}
@@ -626,48 +829,51 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
     );
   }
 
-  // ── Render: resolve phase ─────────────────────────────────────────────────
+  // ── Resolve phase ─────────────────────────────────────────────────────────
 
   const skipCount = entries.filter((e) => e.resolution === "skip").length;
   const overwriteCount = entries.filter((e) => e.resolution === "overwrite").length;
   const keepBothCount = entries.filter((e) => e.resolution === "keep_both").length;
   const blankImportCount = blankEntries.filter((e) => !e.skip).length;
-  const actionCount = overwriteCount + keepBothCount + blankImportCount;
+  const actionCount = overwriteCount + keepBothCount + blankImportCount + toCreate.length;
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md">
       <DialogHeader title="Resolve Conflicts" onClose={handleClose} />
       <DialogBody>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, px: 1, py: 0.5 }}>
-          <Box sx={{ fontSize: "0.8rem", color: frappe.overlay1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+          <Box sx={{ fontSize: "0.8rem", color: c.overlay1, display: "flex", flexDirection: "column", gap: 0.5 }}>
             {firstCreated > 0 && (
-              <Box sx={{ color: frappe.green }}>✓ {firstCreated} non-conflicting article{firstCreated !== 1 ? "s" : ""} already imported.</Box>
+              <Box sx={{ color: c.green }}>✓ {firstCreated} non-conflicting article{firstCreated !== 1 ? "s" : ""} already imported.</Box>
             )}
             {autoSkipped > 0 && (
-              <Box sx={{ color: frappe.overlay1 }}>↷ {autoSkipped} identical row{autoSkipped !== 1 ? "s" : ""} auto-skipped.</Box>
+              <Box sx={{ color: c.overlay1 }}>↷ {autoSkipped} identical row{autoSkipped !== 1 ? "s" : ""} auto-skipped.</Box>
+            )}
+            {toCreate.length > 0 && (
+              <Box sx={{ color: c.green }}>+ {toCreate.length} row{toCreate.length !== 1 ? "s" : ""} re-assigned to a new PMID — will be created.</Box>
             )}
           </Box>
 
-          {/* Toolbar — only shown when there are actual conflicts */}
-          {entries.length > 0 && <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ fontSize: "0.8rem", color: frappe.overlay1 }}>
-              <Box component="span" sx={{ fontWeight: 600, color: frappe.yellow }}>
-                {entries.length} conflict{entries.length !== 1 ? "s" : ""} found
+          {entries.length > 0 && (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box sx={{ fontSize: "0.8rem", color: c.overlay1 }}>
+                <Box component="span" sx={{ fontWeight: 600, color: c.yellow }}>
+                  {entries.length} conflict{entries.length !== 1 ? "s" : ""} found
+                </Box>
+                {" — "}
+                {skipCount > 0 && `${skipCount} skip · `}
+                {overwriteCount > 0 && `${overwriteCount} overwrite · `}
+                {keepBothCount > 0 && `${keepBothCount} keep both · `}
               </Box>
-              {" — "}
-              {skipCount > 0 && `${skipCount} skip · `}
-              {overwriteCount > 0 && `${overwriteCount} overwrite · `}
-              {keepBothCount > 0 && `${keepBothCount} keep both · `}
+              {anyDirty && (
+                <Box component="button" onClick={resetAllEdits}
+                  sx={{ fontSize: "0.72rem", color: c.overlay1, background: "none", border: `1px solid ${c.surface1}`, borderRadius: "3px", px: 1, py: 0.4, cursor: "pointer", "&:hover": { color: c.text, borderColor: c.overlay0 } }}>
+                  Reset All Edits ↺
+                </Box>
+              )}
             </Box>
-            {anyDirty && (
-              <Box component="button" onClick={resetAllEdits}
-                sx={{ fontSize: "0.72rem", color: frappe.overlay1, background: "none", border: `1px solid ${frappe.surface1}`, px: 1, py: 0.4, cursor: "pointer", "&:hover": { color: frappe.text, borderColor: frappe.overlay0 } }}>
-                Reset All Edits ↺
-              </Box>
-            )}
-          </Box>}
+          )}
 
-          {/* Conflict list */}
           {entries.length > 0 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxHeight: 440, overflowY: "auto", pr: 0.5 }}>
               {entries.map((entry, i) => (
@@ -675,17 +881,17 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
                   key={i}
                   entry={entry}
                   onUpdate={(patch) => updateEntry(i, patch)}
+                  onEditDone={() => void handleEditDone(i)}
                 />
               ))}
             </Box>
           )}
 
-          {/* Blank-PMID rows */}
           {blankEntries.length > 0 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Box sx={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: frappe.overlay0 }}>
+              <Box sx={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.overlay0 }}>
                 No PMID — {blankEntries.length} row{blankEntries.length !== 1 ? "s" : ""}
-                <Box component="span" sx={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, ml: 0.75, color: frappe.overlay1 }}>
+                <Box component="span" sx={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, ml: 0.75, color: c.overlay1 }}>
                   (toggle to import or skip each)
                 </Box>
               </Box>

@@ -10,9 +10,8 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import { api } from "~/trpc/react";
 import { TextField } from "~/app/_components/widgets/TextField";
-import { styles, roleBadge } from "../styles";
+import { useStyles } from "../styles";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
 
 const LIMIT = 20;
 
@@ -21,6 +20,7 @@ export function ProjectsAllList() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const { styles, roleBadge, c } = useStyles();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     api.project.getAllProjectsByUserAndOrganization.useInfiniteQuery(
@@ -67,7 +67,7 @@ export function ProjectsAllList() {
           />
         </Box>
         {!isLoading && (
-          <Box sx={{ fontSize: "0.78rem", color: frappe.overlay0 }}>
+          <Box sx={{ fontSize: "0.78rem", color: c.overlay0 }}>
             {projects.length} {projects.length === 1 ? "result" : "results"}
           </Box>
         )}
@@ -122,6 +122,7 @@ export function ProjectsAllList() {
                       backgroundColor: roleBadge[project.role]?.bg,
                       color: roleBadge[project.role]?.color,
                       border: `1px solid ${roleBadge[project.role]?.border}`,
+                      borderRadius: "3px",
                     }}
                   >
                     {project.role}
@@ -147,7 +148,7 @@ export function ProjectsAllList() {
         )}
 
         <Box ref={sentinelRef} sx={styles.sentinel}>
-          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: frappe.blue }} />}
+          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: c.blue }} />}
         </Box>
       </Box>
     </Box>

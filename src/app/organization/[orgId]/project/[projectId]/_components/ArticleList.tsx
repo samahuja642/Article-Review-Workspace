@@ -12,6 +12,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
 import { api } from "~/trpc/react";
@@ -19,10 +20,10 @@ import { TextField } from "~/app/_components/widgets/TextField";
 import { Button } from "~/app/_components/widgets/Button";
 import { AddMemberDialog } from "~/app/organization/[orgId]/_components/AddMemberDialog";
 import { AddArticleDialog } from "./AddArticleDialog";
+import { EditArticleDialog } from "./EditArticleDialog";
 import { ImportArticlesDialog } from "./ImportArticlesDialog";
-import { styles, roleBadge, statusBadge } from "../styles";
+import { useStyles } from "../styles";
 import { useDebounce } from "~/app/_hooks/useDebounce";
-import { frappe } from "~/theme/colors";
 
 type ReviewStatusType = "PENDING" | "IN_REVIEW" | "REVIEWED" | "EXCLUDED";
 
@@ -57,6 +58,11 @@ export function ArticleList({
   const [addArticleOpen, setAddArticleOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<{
+    id: string; title: string; authors: string | null; journal: string | null;
+    publicationYear: number | null; pmid: string | null; doi: string | null;
+  } | null>(null);
+  const { styles, roleBadge, statusBadge, c } = useStyles();
 
   const utils = api.useUtils();
 
@@ -149,7 +155,7 @@ export function ArticleList({
               {orgName}
             </Box>
             <Box component="span" sx={styles.breadcrumbSep}>/</Box>
-            <Box component="span" sx={{ color: frappe.subtext0 }}>{projectName}</Box>
+            <Box component="span" sx={{ color: c.subtext0 }}>{projectName}</Box>
           </Box>
           <Box sx={styles.pageEyebrow}>Project</Box>
           <Box sx={styles.pageTitle}>{projectName}</Box>
@@ -172,6 +178,7 @@ export function ArticleList({
                 backgroundColor: roleBadge[role]?.bg,
                 color: roleBadge[role]?.color,
                 border: `1px solid ${roleBadge[role]?.border}`,
+                borderRadius: "3px",
               }}
             >
               {role}
@@ -208,6 +215,7 @@ export function ArticleList({
             <FilterTab
               label="All"
               active={statusFilter === undefined}
+              c={c}
               onClick={() => setStatusFilter(undefined)}
             />
             {STATUS_OPTIONS.map((s) => (
@@ -216,13 +224,14 @@ export function ArticleList({
                 label={statusBadge[s]!.label}
                 active={statusFilter === s}
                 color={statusBadge[s]!.color}
+                c={c}
                 onClick={() => setStatusFilter(statusFilter === s ? undefined : s)}
               />
             ))}
           </Box>
         </Box>
         {!isLoading && (
-          <Box sx={{ fontSize: "0.78rem", color: frappe.overlay0 }}>
+          <Box sx={{ fontSize: "0.78rem", color: c.overlay0 }}>
             {articles.length} {articles.length === 1 ? "result" : "results"}
           </Box>
         )}
@@ -291,6 +300,7 @@ export function ArticleList({
                         color: badge?.color,
                         backgroundColor: badge?.bg,
                         border: `1px solid ${badge?.border}`,
+                        borderRadius: "3px",
                         "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                         "& .MuiSelect-icon": { color: badge?.color, fontSize: "1rem" },
                         "& .MuiSelect-select": { py: 0, px: 1 },
@@ -305,9 +315,25 @@ export function ArticleList({
 
                     <IconButton
                       size="small"
+                      onClick={() => setEditingArticle({
+                        id: article.id,
+                        title: article.title,
+                        authors: article.authors ?? null,
+                        journal: article.journal ?? null,
+                        publicationYear: article.publicationYear ?? null,
+                        pmid: article.pmid ?? null,
+                        doi: article.doi ?? null,
+                      })}
+                      sx={{ color: c.overlay1, "&:hover": { color: c.blue } }}
+                    >
+                      <EditOutlinedIcon sx={{ fontSize: "0.95rem" }} />
+                    </IconButton>
+
+                    <IconButton
+                      size="small"
                       onClick={() => deleteArticle.mutate({ articleId: article.id })}
                       disabled={deleteArticle.isPending}
-                      sx={{ color: frappe.overlay1, "&:hover": { color: frappe.red } }}
+                      sx={{ color: c.overlay1, "&:hover": { color: c.red } }}
                     >
                       <DeleteOutlineIcon sx={{ fontSize: "0.95rem" }} />
                     </IconButton>
@@ -319,13 +345,20 @@ export function ArticleList({
         )}
 
         <Box ref={sentinelRef} sx={styles.sentinel}>
-          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: frappe.blue }} />}
+          {isFetchingNextPage && <CircularProgress size={18} sx={{ color: c.blue }} />}
         </Box>
       </Box>
 
       <AddArticleDialog
         open={addArticleOpen}
         onClose={() => setAddArticleOpen(false)}
+        projectId={projectId}
+      />
+
+      <EditArticleDialog
+        open={editingArticle !== null}
+        onClose={() => setEditingArticle(null)}
+        article={editingArticle}
         projectId={projectId}
       />
 
@@ -350,11 +383,13 @@ function FilterTab({
   label,
   active,
   color,
+  c,
   onClick,
 }: {
   label: string;
   active: boolean;
   color?: string;
+  c: { blue: string; surface0: string; overlay1: string };
   onClick: () => void;
 }) {
   return (
@@ -366,14 +401,15 @@ function FilterTab({
         py: 0.4,
         fontSize: "0.72rem",
         fontWeight: active ? 600 : 400,
-        border: `1px solid ${active ? (color ?? frappe.blue) : frappe.surface0}`,
-        backgroundColor: active ? `${color ?? frappe.blue}18` : "transparent",
-        color: active ? (color ?? frappe.blue) : frappe.overlay1,
+        border: `1px solid ${active ? (color ?? c.blue) : c.surface0}`,
+        backgroundColor: active ? `${color ?? c.blue}18` : "transparent",
+        color: active ? (color ?? c.blue) : c.overlay1,
         cursor: "pointer",
+        borderRadius: "3px",
         transition: "all 0.1s ease",
         "&:hover": {
-          borderColor: color ?? frappe.blue,
-          color: color ?? frappe.blue,
+          borderColor: color ?? c.blue,
+          color: color ?? c.blue,
         },
       }}
     >

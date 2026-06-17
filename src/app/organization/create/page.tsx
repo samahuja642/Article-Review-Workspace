@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -5,26 +7,26 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { CreateOrganizationForm } from "./_components/CreateOrganizationForm";
-import { styles, perkColors } from "./styles";
-
-export const metadata = { title: "Create Organization" };
-
-const perks = [
-  {
-    icon: <LayersOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.blue }} />,
-    text: "Organize research into scoped projects with their own article sets.",
-  },
-  {
-    icon: <GroupOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.green }} />,
-    text: "Invite team members and collaborate across the review pipeline.",
-  },
-  {
-    icon: <AdminPanelSettingsOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.mauve }} />,
-    text: "Role-based access — owners control membership and permissions.",
-  },
-];
+import { useStyles } from "./styles";
 
 export default function CreateOrganizationPage() {
+  const { styles, perkColors } = useStyles();
+
+  const perks = [
+    {
+      icon: <LayersOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.blue }} />,
+      text: "Organize research into scoped projects with their own article sets.",
+    },
+    {
+      icon: <GroupOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.green }} />,
+      text: "Invite team members and collaborate across the review pipeline.",
+    },
+    {
+      icon: <AdminPanelSettingsOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.mauve }} />,
+      text: "Role-based access — owners control membership and permissions.",
+    },
+  ];
+
   return (
     <Box sx={styles.page}>
       <Box sx={styles.left}>

@@ -6,9 +6,11 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import { frappe } from "~/theme/colors";
+import { useThemeColors } from "~/theme/useThemeColors";
 
 function Dialog({ children, ...props }: DialogProps) {
+  const c = useThemeColors();
+
   return (
     <MuiDialog
       maxWidth="sm"
@@ -18,10 +20,11 @@ function Dialog({ children, ...props }: DialogProps) {
         ...props.slotProps,
         paper: {
           sx: {
-            backgroundColor: frappe.mantle,
-            border: `1px solid ${frappe.surface0}`,
-            borderRadius: 0,
+            backgroundColor: c.mantle,
+            border: `1px solid ${c.surface0}`,
+            borderRadius: "6px",
             backgroundImage: "none",
+            minWidth: { sm: 560 },
           },
         },
       }}
@@ -37,22 +40,24 @@ interface DialogHeaderProps {
 }
 
 function DialogHeader({ title, onClose }: DialogHeaderProps) {
+  const c = useThemeColors();
+
   return (
     <Box
       sx={{
         px: 3,
-        py: 2.5,
+        py: 2,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: `1px solid ${frappe.surface0}`,
+        borderBottom: `1px solid ${c.surface0}`,
       }}
     >
-      <Box sx={{ fontSize: "0.9rem", fontWeight: 700, color: frappe.text }}>
+      <Box sx={{ fontSize: "0.925rem", fontWeight: 700, color: c.text, letterSpacing: "-0.01em" }}>
         {title}
       </Box>
-      <IconButton size="small" onClick={onClose} sx={{ color: frappe.overlay1 }}>
-        <CloseIcon fontSize="small" />
+      <IconButton size="small" onClick={onClose} sx={{ color: c.overlay1, "&:hover": { color: c.text } }}>
+        <CloseIcon sx={{ fontSize: "1rem" }} />
       </IconButton>
     </Box>
   );

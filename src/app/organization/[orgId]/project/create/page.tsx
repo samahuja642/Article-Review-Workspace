@@ -1,3 +1,6 @@
+"use client";
+
+import { use } from "react";
 import Box from "@mui/material/Box";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
@@ -5,31 +8,30 @@ import TrackChangesOutlinedIcon from "@mui/icons-material/TrackChangesOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { CreateProjectForm } from "./_components/CreateProjectForm";
-import { styles, perkColors } from "./styles";
+import { useStyles } from "./styles";
 
-export const metadata = { title: "Create Project" };
-
-const perks = [
-  {
-    icon: <ArticleOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.blue }} />,
-    text: "Upload and manage article sets for systematic literature review.",
-  },
-  {
-    icon: <TrackChangesOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.green }} />,
-    text: "Track each article through the full review pipeline from pending to decision.",
-  },
-  {
-    icon: <GroupOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.sky }} />,
-    text: "Assign reviewers and collaborate across the project team.",
-  },
-];
-
-export default async function CreateProjectPage({
+export default function CreateProjectPage({
   params,
 }: {
   params: Promise<{ orgId: string }>;
 }) {
-  const { orgId } = await params;
+  const { orgId } = use(params);
+  const { styles, perkColors } = useStyles();
+
+  const perks = [
+    {
+      icon: <ArticleOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.blue }} />,
+      text: "Upload and manage article sets for systematic literature review.",
+    },
+    {
+      icon: <TrackChangesOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.green }} />,
+      text: "Track each article through the full review pipeline from pending to decision.",
+    },
+    {
+      icon: <GroupOutlinedIcon sx={{ fontSize: "0.95rem", color: perkColors.sky }} />,
+      text: "Assign reviewers and collaborate across the project team.",
+    },
+  ];
 
   return (
     <Box sx={styles.page}>

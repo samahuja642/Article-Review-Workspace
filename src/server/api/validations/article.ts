@@ -50,6 +50,7 @@ export const importArticlesSchema = z.object({
     overwrites: z.array(z.object({
         articleId: z.string().min(1),
         data: importArticleRowSchema,
+        version: z.number().int(),
     })).max(1000).optional(),
 });
 

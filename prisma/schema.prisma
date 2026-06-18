@@ -78,6 +78,7 @@ model Article {
     pmcid           String?
     nihmsId         String?
     doi             String?
+    version         Int          @default(0)
     reviewStatus    ReviewStatus @default(PENDING)
     projectId       String
     createdAt       DateTime @default(now())

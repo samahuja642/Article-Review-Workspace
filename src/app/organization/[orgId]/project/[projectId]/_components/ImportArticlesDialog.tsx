@@ -495,10 +495,13 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
     onSuccess: (result, variables) => {
       // First pass (no overwrites sent)
       if (!variables.overwrites) {
+        void utils.article.getByProject.invalidate({ projectId });
+        void utils.project.getById.invalidate({ projectId });
+
         if (result.conflicts.length === 0 && result.blankPmidRows.length === 0) {
-          void utils.article.getByProject.invalidate({ projectId });
-          void utils.project.getById.invalidate({ projectId });
-          handleClose();
+          setSummary({ created: result.created, updated: 0, keptBoth: 0, skipped: 0, autoSkipped: 0 });
+          setFirstCreated(result.created);
+          setPhase("summary");
           return;
         }
 
@@ -513,9 +516,8 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         setAutoSkipped(skippedAuto);
 
         if (newEntries.length === 0 && newBlankEntries.length === 0) {
-          void utils.article.getByProject.invalidate({ projectId });
-          void utils.project.getById.invalidate({ projectId });
-          handleClose();
+          setSummary({ created: result.created, updated: 0, keptBoth: 0, skipped: 0, autoSkipped: skippedAuto });
+          setPhase("summary");
           return;
         }
 

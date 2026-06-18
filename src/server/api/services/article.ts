@@ -192,16 +192,44 @@ export async function importArticles({ db, userId, projectId, rows, overwrites }
     const nonConflicting = withPmid.filter((r) => !existingPmidSet.has(r.pmid!));
     const conflicting = withPmid.filter((r) => existingPmidSet.has(r.pmid!));
 
+    // Deduplicate non-conflicting rows by PMID: only create the first occurrence per PMID.
+    // Extra rows with the same new PMID become intra-batch conflicts against the just-created article.
+    const nonConflictingByPmid = new Map<string, (typeof nonConflicting)[number][]>();
+    for (const row of nonConflicting) {
+        const pmid = row.pmid!;
+        if (!nonConflictingByPmid.has(pmid)) nonConflictingByPmid.set(pmid, []);
+        nonConflictingByPmid.get(pmid)!.push(row);
+    }
+    const toCreate = [...nonConflictingByPmid.values()].map((rows) => rows[0]!);
+    const intraBatchDupes = [...nonConflictingByPmid.values()].flatMap((rows) => rows.slice(1));
+
     let created = 0;
-    if (nonConflicting.length > 0) {
-        const result = await db.article.createMany({ data: nonConflicting.map((r) => rowToData(r, projectId)) });
+    if (toCreate.length > 0) {
+        const result = await db.article.createMany({ data: toCreate.map((r) => rowToData(r, projectId)) });
         created = result.count;
     }
 
-    const conflicts: ConflictInfo[] = conflicting.map((incomingRow) => ({
+    // Build conflict list: DB conflicts + intra-batch duplicates
+    const dbConflicts: ConflictInfo[] = conflicting.map((incomingRow) => ({
         incomingRow,
         existing: existingByPmid.find((e) => e.pmid === incomingRow.pmid)!,
     }));
+
+    let intraConflicts: ConflictInfo[] = [];
+    if (intraBatchDupes.length > 0) {
+        const dupePmids = [...new Set(intraBatchDupes.map((r) => r.pmid!))];
+        const justCreated = await db.article.findMany({
+            where: { projectId, pmid: { in: dupePmids } },
+            select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true, doi: true, version: true },
+        });
+        const justCreatedByPmid = new Map(justCreated.map((a) => [a.pmid, a]));
+        intraConflicts = intraBatchDupes.map((incomingRow) => ({
+            incomingRow,
+            existing: justCreatedByPmid.get(incomingRow.pmid!)!,
+        }));
+    }
+
+    const conflicts: ConflictInfo[] = [...dbConflicts, ...intraConflicts];
 
     // Return blank-PMID rows separately so the frontend can let the user review/edit them
     return { created, updated: 0, conflicts, blankPmidRows: noPmid, staleConflicts: [] as ConflictInfo[] };

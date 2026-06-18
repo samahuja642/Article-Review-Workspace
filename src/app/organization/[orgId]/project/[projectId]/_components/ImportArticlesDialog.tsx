@@ -189,7 +189,7 @@ function parseSheet(workbook: XLSX.WorkBook): { rows: ParsedRow[]; skipped: numb
     for (const [key, val] of Object.entries(rawRow)) {
       const mapped = COL_MAP[key.toLowerCase().trim()];
       if (!mapped) continue;
-      const strVal = String(val ?? "").trim();
+      const strVal = (typeof val === "string" || typeof val === "number" ? String(val) : "").trim();
       if (!strVal) continue;
       if (mapped === "publicationYear") {
         const n = parseInt(strVal, 10);
@@ -503,9 +503,9 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
         }
 
         const { entries: newEntries, autoSkipped: skippedAuto } = buildEntries(
-          result.conflicts as { incomingRow: ParsedRow; existing: ExistingArticle }[],
+          result.conflicts,
         );
-        const newBlankEntries: BlankPmidEntry[] = (result.blankPmidRows as ParsedRow[]).map((row) => ({
+        const newBlankEntries: BlankPmidEntry[] = result.blankPmidRows.map((row) => ({
           editedRow: { ...row }, isDirty: false, isEditing: false, skip: false,
         }));
 
@@ -529,7 +529,7 @@ export function ImportArticlesDialog({ open, onClose, projectId }: ImportArticle
       // Second pass (overwrites sent)
       if (result.staleConflicts.length > 0) {
         const { entries: staleEntries } = buildEntries(
-          result.staleConflicts as { incomingRow: ParsedRow; existing: ExistingArticle }[],
+          result.staleConflicts,
         );
         setEntries(staleEntries);
         setBlankEntries([]);

@@ -100,7 +100,7 @@ export function AddMemberDialog({ open, onClose, type, targetId, organizationId 
               </Box>
             ) : !users || users.length === 0 ? (
               <Box sx={{ py: 3, textAlign: "center", fontSize: "0.82rem", color: c.overlay0 }}>
-                No users found matching "{debouncedEmail}"
+                No users found matching &quot;{debouncedEmail}&quot;
               </Box>
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", border: `1px solid ${c.surface0}`, borderRadius: "4px", overflow: "hidden" }}>

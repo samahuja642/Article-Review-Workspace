@@ -289,7 +289,7 @@ export function ArticleList({
                       onChange={(e) =>
                         updateStatus.mutate({
                           articleId: article.id,
-                          reviewStatus: e.target.value as ReviewStatusType,
+                          reviewStatus: e.target.value,
                         })
                       }
                       sx={{

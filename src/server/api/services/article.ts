@@ -104,7 +104,7 @@ export async function checkConflicts({ db, userId, projectId, pmids }: checkConf
 
     const existing = await db.article.findMany({
         where: { projectId, pmid: { in: pmids } },
-        select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true },
+        select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true, doi: true, version: true },
     });
 
     return existing;
@@ -134,22 +134,46 @@ export async function updateArticleFields({ db, userId, articleId, data }: updat
     });
 }
 
+type ConflictExisting = {
+    id: string; pmid: string | null; title: string;
+    authors: string | null; journal: string | null;
+    publicationYear: number | null; doi: string | null; version: number;
+};
+type ConflictInfo = { incomingRow: importArticlesParams["rows"][number]; existing: ConflictExisting };
+
 export async function importArticles({ db, userId, projectId, rows, overwrites }: importArticlesParams) {
     await assertProjectMember(db, userId, projectId);
 
     // Second-pass: conflict resolutions provided — apply overwrites and create keep_both rows
     if (overwrites !== undefined) {
-        await Promise.all(
-            overwrites.map((o) =>
-                db.article.update({ where: { id: o.articleId }, data: rowToData(o.data, projectId) }),
-            ),
-        );
+        let updated = 0;
+        const staleOverwrites: typeof overwrites[number][] = [];
+        for (const o of overwrites) {
+            const result = await db.article.updateMany({
+                where: { id: o.articleId, version: o.version },
+                data: { ...rowToData(o.data, projectId), version: { increment: 1 } },
+            });
+            if (result.count === 0) staleOverwrites.push(o);
+            else updated++;
+        }
+
         let created = 0;
         if (rows.length > 0) {
             const result = await db.article.createMany({ data: rows.map((r) => rowToData(r, projectId)) });
             created = result.count;
         }
-        return { created, updated: overwrites.length, conflicts: [] as { incomingRow: importArticlesParams["rows"][number]; existing: { id: string; pmid: string | null; title: string; authors: string | null; journal: string | null; publicationYear: number | null; } }[], blankPmidRows: [] as importArticlesParams["rows"] };
+
+        const staleConflicts: ConflictInfo[] = staleOverwrites.length > 0
+            ? (await db.article.findMany({
+                where: { id: { in: staleOverwrites.map((o) => o.articleId) } },
+                select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true, doi: true, version: true },
+            })).map((existing) => ({
+                existing,
+                incomingRow: staleOverwrites.find((o) => o.articleId === existing.id)!.data,
+            }))
+            : [];
+
+        return { created, updated, conflicts: [] as ConflictInfo[], blankPmidRows: [] as importArticlesParams["rows"], staleConflicts };
     }
 
     // First-pass: detect conflicts, import non-conflicting rows immediately
@@ -157,10 +181,10 @@ export async function importArticles({ db, userId, projectId, rows, overwrites }
     const noPmid = rows.filter((r) => !r.pmid);
     const pmids = withPmid.map((r) => r.pmid!);
 
-    const existingByPmid = pmids.length > 0
+    const existingByPmid: ConflictExisting[] = pmids.length > 0
         ? await db.article.findMany({
             where: { projectId, pmid: { in: pmids } },
-            select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true },
+            select: { id: true, pmid: true, title: true, authors: true, journal: true, publicationYear: true, doi: true, version: true },
         })
         : [];
 
@@ -174,11 +198,11 @@ export async function importArticles({ db, userId, projectId, rows, overwrites }
         created = result.count;
     }
 
-    const conflicts = conflicting.map((incomingRow) => ({
+    const conflicts: ConflictInfo[] = conflicting.map((incomingRow) => ({
         incomingRow,
         existing: existingByPmid.find((e) => e.pmid === incomingRow.pmid)!,
     }));
 
     // Return blank-PMID rows separately so the frontend can let the user review/edit them
-    return { created, updated: 0, conflicts, blankPmidRows: noPmid };
+    return { created, updated: 0, conflicts, blankPmidRows: noPmid, staleConflicts: [] as ConflictInfo[] };
 }

@@ -61,6 +61,7 @@ export interface importArticleRow {
 export interface importArticleOverwrite {
     articleId: string;
     data: importArticleRow;
+    version: number;
 }
 
 export interface importArticlesParams {
